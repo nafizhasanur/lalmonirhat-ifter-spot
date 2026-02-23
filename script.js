@@ -121,15 +121,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 // স্পট লোড
 async function loadSpots() {
   try {
-    document.getElementById('spots-list').innerHTML = '<p style="text-align:center; color:#555;">লোড হচ্ছে...</p>';
-    const response = await fetch(API_URL);
-    if (!response.ok) throw new Error("API সমস্যা: " + response.status);
+    document.getElementById('spots-list').innerHTML = '<p style="text-align:center; color:#555;">লোড হচ্ছে... অপেক্ষা করুন</p>';
+    const response = await fetch(API_URL + "?action=getAll");
+    if (!response.ok) throw new Error("API রেসপন্স ঠিক নেই: " + response.status);
     spots = await response.json();
     renderSpots();
   } catch (error) {
     console.error("লোড এরর:", error);
     document.getElementById('spots-list').innerHTML = '<p style="text-align:center; color:red;">স্পট লোড হচ্ছে না। পরে চেষ্টা করুন।</p>';
   }
+
 }
 
 function renderSpots() {
