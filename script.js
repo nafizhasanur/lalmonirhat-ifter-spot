@@ -1,5 +1,7 @@
+const API_URL = "https://script.google.com/macros/s/AKfycbz1HkauJbgeW-qHhIddwd6xORaobh4OOU8DxoNpYX93vZ9lkBwEkPwpcp2E11m_MosN/exec";
+
 let map;
-let spots = JSON.parse(localStorage.getItem('spots')) || [];
+let spots = []; // API থেকে লোড হবে
 let pendingLat, pendingLng, addingFromMap = false;
 
 const foodIcons = {
@@ -12,13 +14,15 @@ const foodIcons = {
   'Others': '🍽️'
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   map = L.map('map').setView([25.9167, 89.4500], 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
   }).addTo(map);
 
-  renderSpots();
+  // প্রথমে API থেকে সব স্পট লোড করো
+  await loadSpots();
+
   updateDateTime();
   setInterval(updateTimers, 1000);
   loadDua();
@@ -64,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  document.getElementById('add-form').onsubmit = e => {
+  document.getElementById('add-form').onsubmit = async e => {
     e.preventDefault();
     if (!pendingLat || !pendingLng) return showStatus('লোকেশন দিন', 'error');
 
@@ -81,58 +85,59 @@ document.addEventListener('DOMContentLoaded', () => {
       mittha: 0
     };
 
-    spots.push(spot);
-    localStorage.setItem('spots', JSON.stringify(spots));
-    renderSpots();
-    closeModal();
-    alert('স্পট যোগ হয়েছে!');
-  };
-
-  // ব্যাকগ্রাউন্ড মিউজিক কন্ট্রোল (এখানে যোগ করা হয়েছে)
-  const music = document.getElementById('bg-music');
-  const playPauseBtn = document.getElementById('play-pause-btn');
-  const muteBtn = document.getElementById('mute-btn');
-
-  let isPlaying = false;
-  let isMuted = false;
-
-  // প্রথমে muted রাখা (ব্রাউজার পলিসি)
-  music.muted = true;
-  music.volume = 0.3; // হালকা ভলিউম
-
-  playPauseBtn.onclick = () => {
-    if (isPlaying) {
-      music.pause();
-      playPauseBtn.textContent = '▶';
-      playPauseBtn.classList.remove('playing');
-    } else {
-      music.play().catch(() => {
-        alert('ব্রাউজারে সাউন্ড চালু করতে ক্লিক করুন');
+    // API-তে স্পট যোগ করো
+    try {
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: "add",
+          ...spot
+        })
       });
-      playPauseBtn.textContent = '⏸';
-      playPauseBtn.classList.add('playing');
+      await loadSpots(); // নতুন লিস্ট লোড করো
+      closeModal();
+      alert('স্পট যোগ হয়েছে!');
+    } catch (err) {
+      alert('সার্ভারে সমস্যা: ' + err.message);
     }
-    isPlaying = !isPlaying;
   };
 
-  muteBtn.onclick = () => {
-    music.muted = !music.muted;
-    muteBtn.textContent = music.muted ? '🔇' : '🔊';
-    isMuted = music.muted;
-  };
+  // ব্যাকগ্রাউন্ড মিউজিক অটো-প্লে (কোনো বাটন ছাড়া)
+  const music = document.getElementById('bg-music');
+  music.volume = 0.3;
+  music.muted = true;
 
-  // প্রথম ইউজার ইন্টারেকশনের পর সাউন্ড চালু করার চেষ্টা
-  document.body.addEventListener('click', () => {
-    if (!music.muted && music.paused) {
-      music.play();
-      isPlaying = true;
-      playPauseBtn.textContent = '⏸';
-      playPauseBtn.classList.add('playing');
+  document.body.addEventListener('click', function enableAudio() {
+    if (music.muted) {
+      music.muted = false;
+      if (music.paused) {
+        music.play().catch(() => {
+          console.log('সাউন্ড চালু করতে আরেকবার ক্লিক করুন');
+        });
+      }
     }
+    document.body.removeEventListener('click', enableAudio);
   }, { once: true });
 });
 
+// API থেকে স্পট লোড করা
+async function loadSpots() {
+  try {
+    const response = await fetch(API_URL);
+    spots = await response.json();
+    renderSpots();
+  } catch (error) {
+    console.error("API থেকে লোড করতে সমস্যা:", error);
+    alert("সার্ভার থেকে স্পট লোড হচ্ছে না। পরে আবার চেষ্টা করুন।");
+  }
+}
+
 function renderSpots() {
+  // পুরোনো মার্কার সরাও
+  map.eachLayer(layer => {
+    if (layer instanceof L.Marker) map.removeLayer(layer);
+  });
+
   spots.forEach(spot => {
     const icon = L.divIcon({
       className: 'custom-icon',
@@ -152,7 +157,8 @@ function renderSpots() {
       <button class="vote-btn red" onclick="vote('${spot.id}', 'mittha')">✖</button>
     `);
   });
-  renderSpotList(); // লিস্ট রেন্ডার করো
+
+  renderSpotList();
 }
 
 function renderSpotList() {
@@ -171,17 +177,22 @@ function renderSpotList() {
   });
 }
 
-window.vote = (id, type) => {
-  if (localStorage.getItem(`voted_${id}`)) return alert('আপনি ইতিমধ্যে ভোট দিয়েছেন!');
-  const spot = spots.find(s => s.id === id);
-  if (spot) {
-    spot[type]++;
-    localStorage.setItem('spots', JSON.stringify(spots));
-    localStorage.setItem(`voted_${id}`, 'true');
+async function vote(id, type) {
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: "vote",
+        id,
+        type
+      })
+    });
+    await loadSpots(); // ভোটের পর নতুন ডাটা লোড
     alert('ভোট দেওয়া হয়েছে!');
-    location.reload();
+  } catch (err) {
+    alert('ভোট দেওয়া যায়নি: ' + err.message);
   }
-};
+}
 
 function closeModal() {
   document.getElementById('add-modal').style.display = 'none';
@@ -245,22 +256,3 @@ function loadHadith() {
   const savedHadith = localStorage.getItem('hadith') || "রাসূলুল্লাহ (সা.) বলেছেন: যে ব্যক্তি রমজানের রোজা রাখে ঈমান ও ইহতিসাবের সাথে, তার অতীত গুনাহ মাফ করে দেওয়া হয়। - বুখারী";
   document.getElementById('hadith-text').textContent = savedHadith;
 }
-// ব্যাকগ্রাউন্ড মিউজিক অটো-প্লে (কোনো বাটন ছাড়া)
-const music = document.getElementById('bg-music');
-music.volume = 0.3; // হালকা ভলিউম
-
-// প্রথমে muted রাখা (ব্রাউজার পলিসি)
-music.muted = true;
-
-// প্রথম ইউজার ক্লিকে সাউন্ড চালু করা
-document.body.addEventListener('click', function enableAudio() {
-  if (music.muted) {
-    music.muted = false;
-    if (music.paused) {
-      music.play().catch(() => {
-        console.log('সাউন্ড চালু করতে আরেকবার ক্লিক করুন');
-      });
-    }
-  }
-  document.body.removeEventListener('click', enableAudio);
-}, { once: true });
