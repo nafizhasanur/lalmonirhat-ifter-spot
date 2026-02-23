@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>লালমনিরহাট ইফতার ট্র্যাকার</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>লালমনিরহাট ইফতার ট্র্যাকার</h1>
+      <div class="date-line">
+        <span id="current-date"></span> • <span id="current-day"></span>
+      </div>
+
+      <div class="plans-row">
+        <div class="plan-box animate-fade animate-glow">
+          <h3>দোয়া</h3>
+          <p id="dua-text">দোয়া লোড হচ্ছে...</p>
+        </div>
+        <div class="plan-box animate-fade animate-glow">
+          <h3>আজকের প্ল্যান</h3>
+          <p id="plan-text">প্ল্যান লোড হচ্ছে...</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="timers">
+      <div class="timer sehri animate-fade animate-glow">
+        <h3>সেহরি</h3>
+        <div class="time" id="sehri-time">--:--</div>
+        <div class="countdown" id="sehri-countdown">00:00:00</div>
+      </div>
+      <div class="timer iftar animate-fade animate-glow">
+        <h3>ইফতার</h3>
+        <div class="time" id="iftar-time">--:--</div>
+        <div class="countdown" id="iftar-countdown">00:00:00</div>
+      </div>
+    </div>
+
+    <div id="map"></div>
+
+    <section class="spots">
+      <h2>ইফতার স্পটসমূহ</h2>
+      <div id="spots-list"></div>
+    </section>
+
+    <div class="hadith glass animate-fade animate-glow">
+      <p id="hadith-text">হাদিস লোড হচ্ছে...</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>Made by <a href="https://fusionelevateagency.netlify.app/" target="_blank" rel="noopener noreferrer">fusionelevate</a> </p>
+  </footer>
+
+  <button id="add-btn" class="fab">+</button>
+
+  <div id="add-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">×</span>
+      <h2>নতুন স্পট যোগ করুন</h2>
+      <form id="add-form">
+        <input type="text" id="name" placeholder="মসজিদ/জায়গার নাম *" required>
+        <select id="food" required>
+          <option value="" disabled selected>খাবার *</option>
+          <option value="বিরিয়ানি">বিরিয়ানি</option>
+          <option value="খিচুড়ি">খিচুড়ি</option>
+          <option value="ছোলা">ছোলা</option>
+          <option value="পিয়াজু">পিয়াজু</option>
+          <option value="জুস">জুস</option>
+          <option value="খেজুর">খেজুর</option>
+          <option value="Others">অন্যান্য</option>
+        </select>
+        <input type="text" id="other-food" placeholder="অন্য খাবার লিখুন" style="display:none;">
+        <div class="location-row">
+          <button type="button" id="gps-btn">GPS দিয়ে নিন</button>
+          <button type="button" id="map-btn">ম্যাপে ক্লিক করুন</button>
+        </div>
+        <div id="loc-status" class="status"></div>
+        <button type="submit" class="submit-btn">স্পট যোগ করুন</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
+ <!-- ব্যাকগ্রাউন্ড মিউজিক (কোনো বাটন ছাড়াই অটো-প্লে) -->
+<audio id="bg-music" autoplay loop>
+  <source src="Tala Al Badru Alaina  #ElCálamo - El Cálamo.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
+</body>
+</html>
