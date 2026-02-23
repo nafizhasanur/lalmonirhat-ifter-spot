@@ -12,7 +12,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadConfig() {
-  const res = await fetch(API_URL + "?action=getConfig");
+  const res = await fetch(API_URL + "?action=getConfig", {
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    }
+  });
   const config = await res.json();
 
   document.getElementById('dua-text').value = config.dua;
@@ -23,7 +27,11 @@ async function loadConfig() {
 }
 
 async function loadSpots() {
-  const res = await fetch(API_URL + "?action=getAll");
+  const res = await fetch(API_URL + "?action=getAll", {
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    }
+  });
   const spots = await res.json();
   const tbody = document.getElementById('spot-body');
   tbody.innerHTML = '';
@@ -47,37 +55,69 @@ async function loadSpots() {
 async function saveDua() {
   const text = document.getElementById('dua-text').value.trim();
   if (!text) return alert('দোয়া লিখুন');
-  await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "saveDua", text }) });
+  await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    },
+    body: JSON.stringify({ action: "saveDua", text })
+  });
   alert('দোয়া সেভ হয়েছে!');
 }
 
 async function savePlan() {
   const text = document.getElementById('plan-text').value.trim();
   if (!text) return alert('প্ল্যান লিখুন');
-  await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "savePlan", text }) });
+  await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    },
+    body: JSON.stringify({ action: "savePlan", text })
+  });
   alert('প্ল্যান সেভ হয়েছে!');
 }
 
-// saveHadith, saveTimes-এর জন্য একইভাবে করো (action: "saveHadith", "saveTimes" এবং data {text} বা {sehri, iftar})
+async function saveHadith() {
+  const text = document.getElementById('hadith-text').value.trim();
+  if (!text) return alert('হাদিস লিখুন');
+  await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    },
+    body: JSON.stringify({ action: "saveHadith", text })
+  });
+  alert('হাদিস সেভ হয়েছে!');
+}
 
 async function saveTimes() {
   const sehri = document.getElementById('sehri-input').value.trim();
   const iftar = document.getElementById('iftar-input').value.trim();
   if (!sehri || !iftar) return alert('সময় দিন');
-  await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "saveTimes", sehri, iftar }) });
+  await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    },
+    body: JSON.stringify({ action: "saveTimes", sehri, iftar })
+  });
   alert('সময় সেভ হয়েছে!');
 }
 
 async function addSpotAdmin() {
-  // তোমার আগের লজিক, কিন্তু API-তে POST
   const name = document.getElementById('add-name').value.trim();
   const food = document.getElementById('add-food').value.trim();
   const lat = parseFloat(document.getElementById('add-lat').value);
   const lng = parseFloat(document.getElementById('add-lng').value);
   if (!name || !food || isNaN(lat) || isNaN(lng)) return alert('সব দিন');
-  await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "add", name, food, lat, lng }) });
+  await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    },
+    body: JSON.stringify({ action: "add", name, food, lat, lng })
+  });
   alert('যোগ হয়েছে!');
   loadSpots();
 }
-
-// editSpot – prompt দিয়ে নতুন করে save করতে পারো, কিন্তু এখন সিম্পল রাখলাম (ডিলিটও পরে যোগ করা যাবে)

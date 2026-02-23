@@ -76,6 +76,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const res = await fetch(API_URL, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
         body: JSON.stringify({ action: "add", ...spot })
       });
       if (!res.ok) throw new Error('Add failed');
@@ -101,7 +104,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadConfig() {
   try {
-    const res = await fetch(API_URL + "?action=getConfig");
+    const res = await fetch(API_URL + "?action=getConfig", {
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      }
+    });
     const config = await res.json();
 
     document.getElementById('dua-text').textContent = config.dua;
@@ -118,15 +125,17 @@ async function loadConfig() {
 async function loadSpots() {
   try {
     document.getElementById('spots-list').innerHTML = '<p>লোড হচ্ছে...</p>';
-    const res = await fetch(API_URL + "?action=getAll");
+    const res = await fetch(API_URL + "?action=getAll", {
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      }
+    });
     spots = await res.json();
     renderSpots();
   } catch (err) {
     document.getElementById('spots-list').innerHTML = '<p style="color:red;">স্পট লোড হয়নি।</p>';
   }
 }
-
-// renderSpots, renderSpotList, vote, closeModal, showStatus, updateDateTime, updateTimers, countdown ফাংশনগুলো আগের মতোই রাখো (পরিবর্তন নেই)
 
 function getGPSLocation() {
   if (navigator.geolocation) {
@@ -137,5 +146,3 @@ function getGPSLocation() {
     }, () => showStatus('GPS পাওয়া যায়নি', 'error'));
   }
 }
-
-// বাকি ফাংশনগুলো (renderSpots, vote ইত্যাদি) তোমার আগের কোড থেকে কপি করে নাও – শুধু loadDua/loadPlan/loadHadith বাদ দাও, loadConfig দিয়ে রিপ্লেস করা হয়েছে
