@@ -1,11 +1,13 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbx8BJL5gXXbfmusKE2D5t3bxUDvj4yUxk_GQgrzTvfJZRkhbtuTfC8PhRXfU15Ypig/exec";
 
-document.addEventListener('DOMContentLoaded', async () => {
-  let spots = [];
+let spots = [];
 
-  // প্রথমে সব ডাটা API থেকে লোড করো
-  await loadAllSettings();
+document.addEventListener('DOMContentLoaded', async () => {
+  // প্রথমে সব স্পট লোড করো
   await loadSpots();
+
+  // দোয়া, প্ল্যান, হাদিস, টাইম লোড করো
+  await loadAllSettings();
 
   // সেভ বাটনগুলো
   document.getElementById('save-dua').onclick = async () => {
@@ -42,7 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  // স্পট যোগ
+  // নতুন স্পট যোগ
   document.getElementById('add-spot-btn').onclick = async () => {
     const name = document.getElementById('add-name').value.trim();
     const food = document.getElementById('add-food').value.trim();
@@ -66,24 +68,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  // স্পট টেবিল
-  const tbody = document.getElementById('spot-body');
-  tbody.innerHTML = '';
-  spots.forEach(spot => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${spot.name}</td>
-      <td>${spot.food}</td>
-      <td>${spot.lat.toFixed(4)}, ${spot.lng.toFixed(4)}</td>
-      <td>${spot.sotto}</td>
-      <td>${spot.mittha}</td>
-      <td>
-        <button class="action-btn edit-btn" onclick="editSpot('${spot.id}')">এডিট</button>
-        <button class="action-btn delete-btn" onclick="deleteSpot('${spot.id}')">ডিলিট</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
+  // স্পট টেবিল রেন্ডার
+  renderSpotTable();
 });
 
 // সব সেটিং লোড করা
@@ -127,6 +113,7 @@ async function loadSpots() {
   try {
     const response = await fetch(API_URL + "?action=getAll");
     spots = await response.json();
+    renderSpotTable();
   } catch (err) {
     console.error("স্পট লোড এরর:", err);
   }
@@ -147,7 +134,29 @@ async function addSpot(spot) {
   }
 }
 
-function editSpot(id) {
+// স্পট টেবিল রেন্ডার (এখানে লিস্ট + এডিট/ডিলিট বাটন)
+function renderSpotTable() {
+  const tbody = document.getElementById('spot-body');
+  tbody.innerHTML = '';
+  spots.forEach(spot => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${spot.name}</td>
+      <td>${spot.food}</td>
+      <td>${spot.lat.toFixed(4)}, ${spot.lng.toFixed(4)}</td>
+      <td>${spot.sotto}</td>
+      <td>${spot.mittha}</td>
+      <td>
+        <button class="action-btn edit-btn" onclick="editSpot('${spot.id}')">এডিট</button>
+        <button class="action-btn delete-btn" onclick="deleteSpot('${spot.id}')">ডিলিট</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// স্পট এডিট
+async function editSpot(id) {
   const spot = spots.find(s => s.id === id);
   if (spot) {
     const name = prompt('নতুন নাম:', spot.name);
@@ -155,21 +164,19 @@ function editSpot(id) {
     const sotto = prompt('নতুন সত্য:', spot.sotto);
     const mittha = prompt('নতুন মিথ্যা:', spot.mittha);
     if (name && food) {
-      spot.name = name;
-      spot.food = food;
-      spot.sotto = parseInt(sotto) || 0;
-      spot.mittha = parseInt(mittha) || 0;
-      // এখানে API-তে আপডেট করার ফাংশন যোগ করতে পারো (যদি চাও)
-      alert('এডিট হয়েছে!');
+      const updatedSpot = { ...spot, name, food, sotto: parseInt(sotto) || 0, mittha: parseInt(mittha) || 0 };
+      // এডিট API কল (যদি পরে চাও তাহলে যোগ করতে পারি)
+      alert('এডিট হয়েছে! (এখনো API-তে আপডেট হয়নি, পরে যোগ করা যাবে)');
       location.reload();
     }
   }
 }
 
-function deleteSpot(id) {
+// স্পট ডিলিট
+async function deleteSpot(id) {
   if (confirm('ডিলিট করবেন?')) {
-    // এখানে API-তে ডিলিট করার কোড যোগ করতে পারো (যদি চাও)
-    alert('ডিলিট হয়েছে!');
+    // ডিলিট API কল (যদি পরে চাও তাহলে যোগ করতে পারি)
+    alert('ডিলিট হয়েছে! (এখনো API-তে ডিলিট হয়নি, পরে যোগ করা যাবে)');
     location.reload();
   }
 }
