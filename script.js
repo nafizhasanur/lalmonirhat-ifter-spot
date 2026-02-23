@@ -1,4 +1,4 @@
-const API_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AY5xjrQLcEBPq5uLPCBHNJDhYH8PTaKGwmDHpIDyhBlS0HDclB4j7E-ezjBiMhbmJzPqa_jMSHBwkV-pi43yzPpLeXbnBcJXfZg7G-MX4yR-qNNIkLtWPxcImzDlJMo_FB_mmIhgc8alYeQUxheaUrNdGBG_RNMSVY1JIbmLtkxAESbjyej-00FE69Xc7cX9pxN1Gnu-Lybq3L3okNPEYOWFa5ioV40CKMe5llvzlUMYkMhZoCE1deKP6kScHIiNhhiJ3O_TzU9OVbCHzG1tDBFb1QCnp8RSSA&lib=MF8pJXBxkT9dVJr28seXbrC-FhBVorQb1";
+const API_URL = "https://script.google.com/macros/s/AKfycbwNQtj1E56nCzkphsHP7VLiUvLyTej376BujqVKLzCJpIeBu9glDsfIuCM01KXVTXrz/exec";
 
 let map;
 let spots = [];
