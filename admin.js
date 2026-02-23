@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxYKkDlM4Rx8-bacmIi72DBJ_R-3aLuQupniplcJPfaUZDWNXc_D0UtRXwIxCZGJ0NH/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbx8BJL5gXXbfmusKE2D5t3bxUDvj4yUxk_GQgrzTvfJZRkhbtuTfC8PhRXfU15Ypig/exec";
 
 document.addEventListener('DOMContentLoaded', async () => {
   let spots = [];
