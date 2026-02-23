@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbypCvxcwy4riaMkyU_ET6M0zV_FlMEn67cH5WnjuTQz1foNQDL9BZ9_Gi9yVAAlykt4/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzzd-CYFpmUuhF3Fto1WWRIARf0iMI7sqcR-HeRAsOFqhTgBZ_T33yQtbQW2m_KBag0/exec";
 
 let map;
 let spots = []; // API থেকে লোড হবে
