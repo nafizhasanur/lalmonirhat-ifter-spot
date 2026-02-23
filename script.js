@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxYYZV2xSFFb3YDz-CFenYIR8X6gQTbUmxv_LGiIZ2pqJHyrPTYlaj7N5J71ifQxps/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxYKkDlM4Rx8-bacmIi72DBJ_R-3aLuQupniplcJPfaUZDWNXc_D0UtRXwIxCZGJ0NH/exec";
 
 let map;
 let spots = [];
@@ -119,18 +119,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // স্পট লোড
-async function loadSpots() {
+async function loadDua() {
   try {
-    document.getElementById('spots-list').innerHTML = '<p style="text-align:center; color:#555;">লোড হচ্ছে... অপেক্ষা করুন</p>';
-    const response = await fetch(API_URL + "?action=getAll");
-    if (!response.ok) throw new Error("API রেসপন্স ঠিক নেই: " + response.status);
-    spots = await response.json();
-    renderSpots();
-  } catch (error) {
-    console.error("লোড এরর:", error);
-    document.getElementById('spots-list').innerHTML = '<p style="text-align:center; color:red;">স্পট লোড হচ্ছে না। পরে চেষ্টা করুন।</p>';
+    const response = await fetch(API_URL + "?action=getSetting&key=dua");
+    const data = await response.json();
+    document.getElementById('dua-text').textContent = data.value || "দোয়া লোড হচ্ছে...";
+  } catch (err) {
+    console.error("দোয়া লোড এরর:", err);
   }
+}
 
+async function loadPlan() {
+  try {
+    const response = await fetch(API_URL + "?action=getSetting&key=todaysPlan");
+    const data = await response.json();
+    document.getElementById('plan-text').textContent = data.value || "প্ল্যান লোড হচ্ছে...";
+  } catch (err) {
+    console.error("প্ল্যান লোড এরর:", err);
+  }
+}
+
+async function loadHadith() {
+  try {
+    const response = await fetch(API_URL + "?action=getSetting&key=hadith");
+    const data = await response.json();
+    document.getElementById('hadith-text').textContent = data.value || "হাদিস লোড হচ্ছে...";
+  } catch (err) {
+    console.error("হাদিস লোড এরর:", err);
+  }
 }
 
 function renderSpots() {
