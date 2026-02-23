@@ -132,10 +132,12 @@ async function loadConfig() {
 
 async function loadSpots() {
   try {
+    // এই ৩ লাইন যোগ করা হয়েছে (তোমার অনুরোধ অনুযায়ী)
+    console.log('Trying to fetch spots from:', API_URL + "?action=getAll");
+    const res = await fetch(API_URL + "?action=getAll");
+    console.log('Fetch status:', res.status);
+
     document.getElementById('spots-list').innerHTML = '<p>লোড হচ্ছে...</p>';
-    const res = await fetch(API_URL + "?action=getAll", {
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-    });
     if (!res.ok) throw new Error('Spots fetch failed ' + res.status);
     let text = await res.text();
     text = text.trim().replace(/^\uFEFF/, '');
@@ -198,6 +200,3 @@ function getGPSLocation() {
     }, () => showStatus('GPS পাওয়া যায়নি', 'error'));
   }
 }
-
-// তোমার অন্য ফাংশনগুলো (updateDateTime, updateTimers, countdown, vote, closeModal, showStatus) আগের মতো রাখো
-// যদি vote বা অন্য কোনো না থাকে, বলো আমি যোগ করে দিবো
