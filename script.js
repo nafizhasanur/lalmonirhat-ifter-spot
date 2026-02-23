@@ -1,7 +1,7 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbz1qSGXV6gsCR7uw4zUC2pqeY2BNmypQAkRzPM0k6TMMzZor51JBphRca7f7uIdZatu/exec";
 
 let map;
-let spots = []; // API থেকে লোড হবে
+let spots = [];
 let pendingLat, pendingLng, addingFromMap = false;
 
 const foodIcons = {
@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     attribution: '© OpenStreetMap'
   }).addTo(map);
 
-  // প্রথমে API থেকে সব স্পট লোড করো
   await loadSpots();
 
   updateDateTime();
@@ -85,7 +84,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       mittha: 0
     };
 
-    // API-তে স্পট যোগ করো
     try {
       await fetch(API_URL, {
         method: 'POST',
@@ -94,46 +92,47 @@ document.addEventListener('DOMContentLoaded', async () => {
           ...spot
         })
       });
-      await loadSpots(); // নতুন লিস্ট লোড করো
+      await loadSpots();
       closeModal();
       alert('স্পট যোগ হয়েছে!');
     } catch (err) {
-      alert('সার্ভারে সমস্যা: ' + err.message);
+      alert('স্পট যোগ হয়নি: ' + err.message);
     }
   };
 
-  // ব্যাকগ্রাউন্ড মিউজিক অটো-প্লে (কোনো বাটন ছাড়া)
+  // মিউজিক অটো-প্লে
   const music = document.getElementById('bg-music');
-  music.volume = 0.3;
-  music.muted = true;
+  if (music) {
+    music.volume = 0.3;
+    music.muted = true;
 
-  document.body.addEventListener('click', function enableAudio() {
-    if (music.muted) {
-      music.muted = false;
-      if (music.paused) {
-        music.play().catch(() => {
-          console.log('সাউন্ড চালু করতে আরেকবার ক্লিক করুন');
-        });
+    document.body.addEventListener('click', function enableAudio() {
+      if (music.muted) {
+        music.muted = false;
+        if (music.paused) {
+          music.play().catch(() => console.log('সাউন্ড চালু করতে ক্লিক করুন'));
+        }
       }
-    }
-    document.body.removeEventListener('click', enableAudio);
-  }, { once: true });
+      document.body.removeEventListener('click', enableAudio);
+    }, { once: true });
+  }
 });
 
-// API থেকে স্পট লোড করা
+// স্পট লোড
 async function loadSpots() {
   try {
+    document.getElementById('spots-list').innerHTML = '<p style="text-align:center; color:#555;">লোড হচ্ছে...</p>';
     const response = await fetch(API_URL);
+    if (!response.ok) throw new Error("API সমস্যা: " + response.status);
     spots = await response.json();
     renderSpots();
   } catch (error) {
-    console.error("API থেকে লোড করতে সমস্যা:", error);
-    alert("সার্ভার থেকে স্পট লোড হচ্ছে না। পরে আবার চেষ্টা করুন।");
+    console.error("লোড এরর:", error);
+    document.getElementById('spots-list').innerHTML = '<p style="text-align:center; color:red;">স্পট লোড হচ্ছে না। পরে চেষ্টা করুন।</p>';
   }
 }
 
 function renderSpots() {
-  // পুরোনো মার্কার সরাও
   map.eachLayer(layer => {
     if (layer instanceof L.Marker) map.removeLayer(layer);
   });
@@ -141,7 +140,7 @@ function renderSpots() {
   spots.forEach(spot => {
     const icon = L.divIcon({
       className: 'custom-icon',
-      html: `<span style="font-size: 32px; line-height: 1;">${foodIcons[spot.food] || '🍲'}</span>`,
+      html: `<span style="font-size: 32px;">${foodIcons[spot.food] || '🍲'}</span>`,
       iconSize: [40, 40],
       iconAnchor: [20, 40],
       popupAnchor: [0, -40]
@@ -187,7 +186,7 @@ async function vote(id, type) {
         type
       })
     });
-    await loadSpots(); // ভোটের পর নতুন ডাটা লোড
+    await loadSpots();
     alert('ভোট দেওয়া হয়েছে!');
   } catch (err) {
     alert('ভোট দেওয়া যায়নি: ' + err.message);
