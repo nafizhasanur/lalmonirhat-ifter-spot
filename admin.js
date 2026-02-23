@@ -1,123 +1,36 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbwNQtj1E56nCzkphsHP7VLiUvLyTej376BujqVKLzCJpIeBu9glDsfIuCM01KXVTXrz/exec";
-
-document.addEventListener('DOMContentLoaded', async () => {
-  await loadConfig();
-  await loadSpots();
-
-  document.getElementById('save-dua').onclick = saveDua;
-  document.getElementById('save-plan').onclick = savePlan;
-  document.getElementById('save-hadith').onclick = saveHadith;
-  document.getElementById('save-time').onclick = saveTimes;
-  document.getElementById('add-spot-btn').onclick = addSpotAdmin;
-});
-
+// loadConfig-এ
 async function loadConfig() {
-  const res = await fetch(API_URL + "?action=getConfig", {
-    headers: {
-      'Content-Type': 'text/plain;charset=utf-8'
-    }
-  });
-  const config = await res.json();
+  try {
+    const res = await fetch(API_URL + "?action=getConfig", {
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    });
+    if (!res.ok) throw new Error(`Config failed: ${res.status}`);
+    const text = await res.text();
+    console.log('Admin config raw:', text);
+    const config = JSON.parse(text);
 
-  document.getElementById('dua-text').value = config.dua;
-  document.getElementById('plan-text').value = config.plan;
-  document.getElementById('hadith-text').value = config.hadith;
-  document.getElementById('sehri-input').value = config.sehriTime;
-  document.getElementById('iftar-input').value = config.iftarTime;
+    document.getElementById('dua-text').value = config.dua || '';
+    document.getElementById('plan-text').value = config.plan || '';
+    document.getElementById('hadith-text').value = config.hadith || '';
+    document.getElementById('sehri-input').value = config.sehriTime || '05:30';
+    document.getElementById('iftar-input').value = config.iftarTime || '18:05';
+  } catch (err) {
+    console.error("Admin config error:", err);
+  }
 }
 
-async function loadSpots() {
-  const res = await fetch(API_URL + "?action=getAll", {
-    headers: {
-      'Content-Type': 'text/plain;charset=utf-8'
-    }
-  });
-  const spots = await res.json();
-  const tbody = document.getElementById('spot-body');
-  tbody.innerHTML = '';
-  spots.forEach(spot => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${spot.name}</td>
-      <td>${spot.food}</td>
-      <td>${spot.lat.toFixed(5)}, ${spot.lng.toFixed(5)}</td>
-      <td>${spot.sotto}</td>
-      <td>${spot.mittha}</td>
-      <td>
-        <button class="action-btn edit-btn" onclick="editSpot('${spot.id}')">এডিট</button>
-        <button class="action-btn delete-btn" onclick="alert('ডিলিট ফিচার এখনো যোগ হয়নি।')">ডিলিট</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-async function saveDua() {
-  const text = document.getElementById('dua-text').value.trim();
-  if (!text) return alert('দোয়া লিখুন');
-  await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'text/plain;charset=utf-8'
-    },
-    body: JSON.stringify({ action: "saveDua", text })
-  });
-  alert('দোয়া সেভ হয়েছে!');
-}
-
-async function savePlan() {
-  const text = document.getElementById('plan-text').value.trim();
-  if (!text) return alert('প্ল্যান লিখুন');
-  await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'text/plain;charset=utf-8'
-    },
-    body: JSON.stringify({ action: "savePlan", text })
-  });
-  alert('প্ল্যান সেভ হয়েছে!');
-}
-
-async function saveHadith() {
-  const text = document.getElementById('hadith-text').value.trim();
-  if (!text) return alert('হাদিস লিখুন');
-  await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'text/plain;charset=utf-8'
-    },
-    body: JSON.stringify({ action: "saveHadith", text })
-  });
-  alert('হাদিস সেভ হয়েছে!');
-}
-
+// save functions-এও text response দেখো
 async function saveTimes() {
   const sehri = document.getElementById('sehri-input').value.trim();
   const iftar = document.getElementById('iftar-input').value.trim();
   if (!sehri || !iftar) return alert('সময় দিন');
-  await fetch(API_URL, {
+  const res = await fetch(API_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'text/plain;charset=utf-8'
-    },
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({ action: "saveTimes", sehri, iftar })
   });
+  const text = await res.text();
+  console.log('Save times response:', text);
   alert('সময় সেভ হয়েছে!');
-}
-
-async function addSpotAdmin() {
-  const name = document.getElementById('add-name').value.trim();
-  const food = document.getElementById('add-food').value.trim();
-  const lat = parseFloat(document.getElementById('add-lat').value);
-  const lng = parseFloat(document.getElementById('add-lng').value);
-  if (!name || !food || isNaN(lat) || isNaN(lng)) return alert('সব দিন');
-  await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'text/plain;charset=utf-8'
-    },
-    body: JSON.stringify({ action: "add", name, food, lat, lng })
-  });
-  alert('যোগ হয়েছে!');
-  loadSpots();
+  // optional: loadConfig() আবার কল করো যাতে UI আপডেট হয়
 }

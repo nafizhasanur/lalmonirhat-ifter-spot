@@ -25,10 +25,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadConfig()
   ]);
 
-  updateDateTime();
+  updateDateTime();           // এটা সবসময় কল হবে
   setInterval(updateTimers, 1000);
 
-  // add button etc.
   document.getElementById('add-btn').onclick = () => {
     document.getElementById('add-modal').style.display = 'flex';
   };
@@ -76,21 +75,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const res = await fetch(API_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8'
-        },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: "add", ...spot })
       });
-      if (!res.ok) throw new Error('Add failed');
+      const text = await res.text();  // প্রথমে text নাও
+      console.log('Add response text:', text);
+      if (!res.ok) throw new Error('Add failed: ' + text);
       await loadSpots();
       closeModal();
       alert('স্পট যোগ হয়েছে!');
     } catch (err) {
+      console.error('Add error:', err);
       alert('যোগ হয়নি: ' + err.message);
     }
   };
 
-  // Music auto-play fix
   const music = document.getElementById('bg-music');
   if (music) {
     music.volume = 0.3;
@@ -105,20 +104,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadConfig() {
   try {
     const res = await fetch(API_URL + "?action=getConfig", {
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8'
-      }
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
     });
-    const config = await res.json();
+    if (!res.ok) {
+      throw new Error(`Config fetch failed: ${res.status} ${await res.text()}`);
+    }
+    const text = await res.text();
+    console.log('Config raw text:', text);
+    const config = JSON.parse(text);  // parse manually
 
-    document.getElementById('dua-text').textContent = config.dua;
-    document.getElementById('plan-text').textContent = config.plan;
-    document.getElementById('hadith-text').textContent = config.hadith;
+    document.getElementById('dua-text').textContent = config.dua || "দোয়া লোড হয়নি";
+    document.getElementById('plan-text').textContent = config.plan || "প্ল্যান লোড হয়নি";
+    document.getElementById('hadith-text').textContent = config.hadith || "হাদিস লোড হয়নি";
 
-    localStorage.setItem('sehriTime', config.sehriTime);  // countdown-এর জন্য local-এ রাখা যায়
-    localStorage.setItem('iftarTime', config.iftarTime);
+    const sehri = config.sehriTime || "05:30";
+    const iftar = config.iftarTime || "18:05";
+    localStorage.setItem('sehriTime', sehri);
+    localStorage.setItem('iftarTime', iftar);
+
+    // timers update করো
+    document.getElementById('sehri-time').textContent = sehri;
+    document.getElementById('iftar-time').textContent = iftar;
   } catch (err) {
     console.error("Config load error:", err);
+    // fallback default দেখাও
+    document.getElementById('dua-text').textContent = "আল্লাহুম্মা ইন্নাকা আফুয়্যুন তুহিব্বুল আফওয়া ফা'ফু আন্না।";
+    document.getElementById('plan-text').textContent = "আজকের প্ল্যান: রোজা রাখুন, নামাজ পড়ুন, দান করুন।";
   }
 }
 
@@ -126,14 +137,18 @@ async function loadSpots() {
   try {
     document.getElementById('spots-list').innerHTML = '<p>লোড হচ্ছে...</p>';
     const res = await fetch(API_URL + "?action=getAll", {
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8'
-      }
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
     });
-    spots = await res.json();
+    if (!res.ok) {
+      throw new Error(`Spots fetch failed: ${res.status} ${await res.text()}`);
+    }
+    const text = await res.text();
+    console.log('Spots raw text:', text);
+    spots = JSON.parse(text);
     renderSpots();
   } catch (err) {
-    document.getElementById('spots-list').innerHTML = '<p style="color:red;">স্পট লোড হয়নি।</p>';
+    console.error("Spots load error:", err);
+    document.getElementById('spots-list').innerHTML = '<p style="color:red;">স্পট লোড হয়নি। পরে চেষ্টা করুন।</p>';
   }
 }
 
@@ -146,3 +161,6 @@ function getGPSLocation() {
     }, () => showStatus('GPS পাওয়া যায়নি', 'error'));
   }
 }
+
+// বাকি ফাংশনগুলো (renderSpots, renderSpotList, vote, closeModal, showStatus, updateDateTime, updateTimers, countdown) তোমার আগের কোড থেকে রাখো
+// যদি renderSpots না থাকে তাহলে বলো, আমি দিয়ে দিবো
