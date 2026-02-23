@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbx8oJ-VZF3ithVjgQgDqsH__eMSUxWGYC_P2yanw7j81AC94ETEWJuki1MnkiD8BKXn/exec";
+const API_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AY5xjrQLcEBPq5uLPCBHNJDhYH8PTaKGwmDHpIDyhBlS0HDclB4j7E-ezjBiMhbmJzPqa_jMSHBwkV-pi43yzPpLeXbnBcJXfZg7G-MX4yR-qNNIkLtWPxcImzDlJMo_FB_mmIhgc8alYeQUxheaUrNdGBG_RNMSVY1JIbmLtkxAESbjyej-00FE69Xc7cX9pxN1Gnu-Lybq3L3okNPEYOWFa5ioV40CKMe5llvzlUMYkMhZoCE1deKP6kScHIiNhhiJ3O_TzU9OVbCHzG1tDBFb1QCnp8RSSA&lib=MF8pJXBxkT9dVJr28seXbrC-FhBVorQb1";
 
 let map;
 let spots = [];
@@ -20,14 +20,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     attribution: '© OpenStreetMap'
   }).addTo(map);
 
-  await loadSpots();
+  await Promise.all([
+    loadSpots(),
+    loadConfig()
+  ]);
 
   updateDateTime();
   setInterval(updateTimers, 1000);
-  loadDua();
-  loadPlan();
-  loadHadith();
 
+  // add button etc.
   document.getElementById('add-btn').onclick = () => {
     document.getElementById('add-modal').style.display = 'flex';
   };
@@ -41,20 +42,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('other-food').style.display = e.target.value === 'Others' ? 'block' : 'none';
   };
 
-  document.getElementById('gps-btn').onclick = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(pos => {
-        pendingLat = pos.coords.latitude;
-        pendingLng = pos.coords.longitude;
-        showStatus('লোকেশন নির্বাচিত হয়েছে!', 'success');
-      }, () => showStatus('GPS পাওয়া যায়নি', 'error'));
-    }
-  };
-
+  document.getElementById('gps-btn').onclick = getGPSLocation;
   document.getElementById('map-btn').onclick = () => {
     document.getElementById('add-modal').style.display = 'none';
     addingFromMap = true;
-    showStatus('ম্যাপে ক্লিক করুন', 'info');
+    showStatus('ম্যাপে ক্লিক করুন লোকেশন নির্বাচন করতে', 'info');
   };
 
   map.on('click', e => {
@@ -63,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       pendingLng = e.latlng.lng;
       addingFromMap = false;
       document.getElementById('add-modal').style.display = 'flex';
-      showStatus('লোকেশন নির্বাচিত হয়েছে!', 'success');
+      showStatus('লোকেশন নির্বাচিত!', 'success');
     }
   });
 
@@ -75,200 +67,75 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (food === 'Others') food = document.getElementById('other-food').value.trim() || 'অন্যান্য';
 
     const spot = {
-      id: Date.now().toString(),
       name: document.getElementById('name').value.trim(),
       food,
       lat: pendingLat,
-      lng: pendingLng,
-      sotto: 0,
-      mittha: 0
+      lng: pendingLng
     };
 
     try {
-      await fetch(API_URL, {
+      const res = await fetch(API_URL, {
         method: 'POST',
-        body: JSON.stringify({
-          action: "add",
-          ...spot
-        })
+        body: JSON.stringify({ action: "add", ...spot })
       });
+      if (!res.ok) throw new Error('Add failed');
       await loadSpots();
       closeModal();
       alert('স্পট যোগ হয়েছে!');
     } catch (err) {
-      alert('স্পট যোগ হয়নি: ' + err.message);
+      alert('যোগ হয়নি: ' + err.message);
     }
   };
 
-  // মিউজিক অটো-প্লে
+  // Music auto-play fix
   const music = document.getElementById('bg-music');
   if (music) {
     music.volume = 0.3;
     music.muted = true;
-
-    document.body.addEventListener('click', function enableAudio() {
-      if (music.muted) {
-        music.muted = false;
-        if (music.paused) {
-          music.play().catch(() => console.log('সাউন্ড চালু করতে ক্লিক করুন'));
-        }
-      }
-      document.body.removeEventListener('click', enableAudio);
+    document.body.addEventListener('click', () => {
+      music.muted = false;
+      music.play().catch(() => {});
     }, { once: true });
   }
 });
 
-// স্পট লোড
-async function loadDua() {
+async function loadConfig() {
   try {
-    const response = await fetch(API_URL + "?action=getSetting&key=dua");
-    const data = await response.json();
-    document.getElementById('dua-text').textContent = data.value || "দোয়া লোড হচ্ছে...";
+    const res = await fetch(API_URL + "?action=getConfig");
+    const config = await res.json();
+
+    document.getElementById('dua-text').textContent = config.dua;
+    document.getElementById('plan-text').textContent = config.plan;
+    document.getElementById('hadith-text').textContent = config.hadith;
+
+    localStorage.setItem('sehriTime', config.sehriTime);  // countdown-এর জন্য local-এ রাখা যায়
+    localStorage.setItem('iftarTime', config.iftarTime);
   } catch (err) {
-    console.error("দোয়া লোড এরর:", err);
+    console.error("Config load error:", err);
   }
 }
 
-async function loadPlan() {
+async function loadSpots() {
   try {
-    const response = await fetch(API_URL + "?action=getSetting&key=todaysPlan");
-    const data = await response.json();
-    document.getElementById('plan-text').textContent = data.value || "প্ল্যান লোড হচ্ছে...";
+    document.getElementById('spots-list').innerHTML = '<p>লোড হচ্ছে...</p>';
+    const res = await fetch(API_URL + "?action=getAll");
+    spots = await res.json();
+    renderSpots();
   } catch (err) {
-    console.error("প্ল্যান লোড এরর:", err);
+    document.getElementById('spots-list').innerHTML = '<p style="color:red;">স্পট লোড হয়নি।</p>';
   }
 }
 
-async function loadHadith() {
-  try {
-    const response = await fetch(API_URL + "?action=getSetting&key=hadith");
-    const data = await response.json();
-    document.getElementById('hadith-text').textContent = data.value || "হাদিস লোড হচ্ছে...";
-  } catch (err) {
-    console.error("হাদিস লোড এরর:", err);
+// renderSpots, renderSpotList, vote, closeModal, showStatus, updateDateTime, updateTimers, countdown ফাংশনগুলো আগের মতোই রাখো (পরিবর্তন নেই)
+
+function getGPSLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      pendingLat = pos.coords.latitude;
+      pendingLng = pos.coords.longitude;
+      showStatus('GPS দিয়ে লোকেশন নেওয়া হয়েছে!', 'success');
+    }, () => showStatus('GPS পাওয়া যায়নি', 'error'));
   }
 }
 
-function renderSpots() {
-  map.eachLayer(layer => {
-    if (layer instanceof L.Marker) map.removeLayer(layer);
-  });
-
-  spots.forEach(spot => {
-    const icon = L.divIcon({
-      className: 'custom-icon',
-      html: `<span style="font-size: 32px;">${foodIcons[spot.food] || '🍲'}</span>`,
-      iconSize: [40, 40],
-      iconAnchor: [20, 40],
-      popupAnchor: [0, -40]
-    });
-
-    const marker = L.marker([spot.lat, spot.lng], {icon}).addTo(map);
-    marker.bindPopup(`
-      <b>${spot.name}</b><br>
-      খাবার: ${spot.food}<br><br>
-      <b>সত্য: ${spot.sotto}</b> 
-      <button class="vote-btn green" onclick="vote('${spot.id}', 'sotto')">✔</button><br>
-      <b>মিথ্যা: ${spot.mittha}</b> 
-      <button class="vote-btn red" onclick="vote('${spot.id}', 'mittha')">✖</button>
-    `);
-  });
-
-  renderSpotList();
-}
-
-function renderSpotList() {
-  const list = document.getElementById('spots-list');
-  list.innerHTML = '';
-  spots.forEach(spot => {
-    const card = document.createElement('div');
-    card.className = 'spot-card';
-    card.innerHTML = `
-      <h3>${spot.name}</h3>
-      <p>${spot.food}</p>
-      <p>সত্য: ${spot.sotto} • মিথ্যা: ${spot.mittha}</p>
-    `;
-    card.onclick = () => map.setView([spot.lat, spot.lng], 16);
-    list.appendChild(card);
-  });
-}
-
-async function vote(id, type) {
-  try {
-    await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({
-        action: "vote",
-        id,
-        type
-      })
-    });
-    await loadSpots();
-    alert('ভোট দেওয়া হয়েছে!');
-  } catch (err) {
-    alert('ভোট দেওয়া যায়নি: ' + err.message);
-  }
-}
-
-function closeModal() {
-  document.getElementById('add-modal').style.display = 'none';
-  document.getElementById('add-form').reset();
-  document.getElementById('other-food').style.display = 'none';
-  pendingLat = pendingLng = null;
-  addingFromMap = false;
-}
-
-function showStatus(msg, type) {
-  const el = document.getElementById('loc-status');
-  el.textContent = msg;
-  el.className = 'status ' + type;
-}
-
-function updateDateTime() {
-  const now = new Date();
-  document.getElementById('current-date').textContent = now.toLocaleDateString('bn-BD');
-  document.getElementById('current-day').textContent = now.toLocaleDateString('bn-BD', { weekday: 'long' });
-}
-
-function updateTimers() {
-  const sehri = localStorage.getItem('sehriTime') || '05:30';
-  const iftar = localStorage.getItem('iftarTime') || '18:05';
-
-  document.getElementById('sehri-time').textContent = sehri;
-  document.getElementById('iftar-time').textContent = iftar;
-
-  const [sehriH, sehriM] = sehri.split(':').map(Number);
-  const [iftarH, iftarM] = iftar.split(':').map(Number);
-
-  const sehriTime = new Date();
-  sehriTime.setHours(sehriH, sehriM, 0);
-  const iftarTime = new Date();
-  iftarTime.setHours(iftarH, iftarM, 0);
-
-  const now = new Date();
-  document.getElementById('sehri-countdown').textContent = countdown(sehriTime - now);
-  document.getElementById('iftar-countdown').textContent = countdown(iftarTime - now);
-}
-
-function countdown(ms) {
-  if (ms <= 0) return 'সময় পার';
-  const h = Math.floor(ms / 3600000).toString().padStart(2, '0');
-  const m = Math.floor((ms % 3600000) / 60000).toString().padStart(2, '0');
-  const s = Math.floor((ms % 60000) / 1000).toString().padStart(2, '0');
-  return `${h}:${m}:${s}`;
-}
-
-function loadDua() {
-  const savedDua = localStorage.getItem('dua') || "আল্লাহুম্মা ইন্নাকা আফুয়্যুন তুহিব্বুল আফওয়া ফা'ফু আন্না।";
-  document.getElementById('dua-text').textContent = savedDua;
-}
-
-function loadPlan() {
-  const savedPlan = localStorage.getItem('todaysPlan') || "আজকের প্ল্যান: রোজা রাখুন, নামাজ পড়ুন, দান করুন।";
-  document.getElementById('plan-text').textContent = savedPlan;
-}
-
-function loadHadith() {
-  const savedHadith = localStorage.getItem('hadith') || "রাসূলুল্লাহ (সা.) বলেছেন: যে ব্যক্তি রমজানের রোজা রাখে ঈমান ও ইহতিসাবের সাথে, তার অতীত গুনাহ মাফ করে দেওয়া হয়। - বুখারী";
-  document.getElementById('hadith-text').textContent = savedHadith;
-}
+// বাকি ফাংশনগুলো (renderSpots, vote ইত্যাদি) তোমার আগের কোড থেকে কপি করে নাও – শুধু loadDua/loadPlan/loadHadith বাদ দাও, loadConfig দিয়ে রিপ্লেস করা হয়েছে
