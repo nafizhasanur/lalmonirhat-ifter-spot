@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbw3Y_v-6XHls51q8y52wnlkuO8gY3vHFuWJo6FMamn7zbXSluk_WuzvVPbZ0MKLu5eX/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwoOnQUNgSAupzZVc_i0tjq3mCWiAUvfvV09oXiUB4OAKtX00n6WE8D_IrEiG8Piugv/exec";
 
 let map;
 let spots = [];
@@ -23,7 +23,7 @@ window.vote = async function(id, type) {
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: "vote", id, type, secret: "lal09%" })
+      body: JSON.stringify({ action: "vote", id, type })
     });
     if (!res.ok) throw new Error('Vote failed');
     localStorage.setItem('voted_' + id, 'true');
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: currentEditId ? "edit" : "add", id: currentEditId, secret: "lal09%", ...spot })
+        body: JSON.stringify({ action: currentEditId ? "edit" : "add", id: currentEditId, ...spot })
       });
       const text = await res.text();
       console.log('Add response:', text);
@@ -201,18 +201,36 @@ function renderSpots() {
     const lng = parseFloat(spot.lng);
 
     if (isNaN(lat) || isNaN(lng)) {
-      console.warn('Invalid lat/lng for spot:', spot.name, spot.lat, spot.lng);
+      console.warn('Invalid lat/lng for spot:', spot.name);
       return;
     }
 
-    // সিম্পল মার্কার + permanent tooltip দিয়ে emoji (সব ব্রাউজারে কাজ করে)
-    const marker = L.marker([lat, lng]).addTo(map);
-    marker.bindTooltip(emoji, {
-      permanent: true,
-      direction: 'center',
-      className: 'emoji-tooltip',
-      offset: [0, -15] // উপরে রাখার জন্য offset
+    // বড় গোলাকার আইকন (তোমার স্ক্রিনশটের মতো)
+    const icon = L.divIcon({
+      html: `
+        <div style="
+          width: 48px;
+          height: 48px;
+          background: white;
+          border: 3px solid #333;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 28px;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+          animation: pulse 2s infinite;
+        ">
+          ${emoji}
+        </div>
+      `,
+      className: '', // খালি রাখা যাতে Leaflet extra style না দেয়
+      iconSize: [48, 48],
+      iconAnchor: [24, 24], // কেন্দ্র থেকে anchor
+      popupAnchor: [0, -24]
     });
+
+    const marker = L.marker([lat, lng], { icon }).addTo(map);
 
     let popupContent = `<b>${spot.name}</b><br>খাবার: ${spot.food || 'মসজিদ'}<br><br>`;
 
@@ -229,7 +247,7 @@ function renderSpots() {
     marker.bindPopup(popupContent);
   });
 
-  // List-এ শুধু খাবার স্পট দেখানো
+  // List-এ শুধু খাবার স্পট দেখানো (mosque বাদ)
   const list = document.getElementById('spots-list');
   list.innerHTML = '';
   const foodSpots = spots.filter(spot => spot.food && spot.food !== 'মসজিদ');
@@ -244,13 +262,14 @@ function renderSpots() {
     card.onclick = () => map.setView([parseFloat(spot.lat), parseFloat(spot.lng)], 16);
     list.appendChild(card);
   });
-}async function vote(id, type) {
+}
+async function vote(id, type) {
   if (localStorage.getItem('voted_' + id)) return alert('আপনি ইতিমধ্যে ভোট দিয়েছেন!');
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: "vote", id, type, secret: "lal09%" })
+      body: JSON.stringify({ action: "vote", id, type })
     });
     if (!res.ok) throw new Error('Vote failed');
     localStorage.setItem('voted_' + id, 'true');
@@ -331,5 +350,47 @@ function getGPSLocation() {
       pendingLng = pos.coords.longitude;
       showStatus('GPS দিয়ে লোকেশন নেওয়া হয়েছে!', 'success');
     }, () => showStatus('GPS পাওয়া যায়নি', 'error'));
+  }
+}
+
+// Admin editSpot function (নতুন যোগ করা)
+async function editSpot(id) {
+  const name = prompt('নতুন নাম:', '');
+  const food = prompt('নতুন খাবার:', '');
+  const latStr = prompt('নতুন Lat:', '');
+  const lngStr = prompt('নতুন Lng:', '');
+  const sotto = prompt('নতুন সত্য:', '');
+  const mittha = prompt('নতুন মিথ্যা:', '');
+
+  const lat = parseFloat(latStr);
+  const lng = parseFloat(lngStr);
+
+  if (name && food && !isNaN(lat) && !isNaN(lng)) {
+    const spot = {
+      id,
+      name,
+      food,
+      lat,
+      lng,
+      sotto: parseInt(sotto) || 0,
+      mittha: parseInt(mittha) || 0
+    };
+
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: "edit", ...spot })
+      });
+      const text = await res.text();
+      console.log('Edit response:', text);
+      if (!res.ok) throw new Error('Edit failed');
+      alert('এডিট হয়েছে!');
+      loadSpots(); // admin list refresh
+    } catch (err) {
+      alert('এডিট হয়নি: ' + err.message);
+    }
+  } else {
+    alert('সব তথ্য ঠিকমতো দিন (Lat/Lng number হতে হবে)');
   }
 }
