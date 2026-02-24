@@ -244,8 +244,7 @@ function renderSpots() {
     card.onclick = () => map.setView([parseFloat(spot.lat), parseFloat(spot.lng)], 16);
     list.appendChild(card);
   });
-}
-async function vote(id, type) {
+}async function vote(id, type) {
   if (localStorage.getItem('voted_' + id)) return alert('আপনি ইতিমধ্যে ভোট দিয়েছেন!');
   try {
     const res = await fetch(API_URL, {
