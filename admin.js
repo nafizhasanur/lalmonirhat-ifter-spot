@@ -1,27 +1,28 @@
-const API_URL = "https://script.google.com/macros/s/AKfycby-xUhfnIJ2XnsmNWGSMDGzYkPU2bWag3iQkHwaKBFciQ6O4oMyK0n-ThhyHWIUKkNN/exec";
-
-let adminMap;
-let adminPendingLat, adminPendingLng, adminAddingFromMap = false;
+const API_URL = "https://script.google.com/macros/s/AKfycbzdktu9biJ_PjsuLef-6rH3G3R0yRvrPBv0NUx_TSBFK22F8hzACn0grYMMsWmvXM3f/exec";
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadConfig();
   await loadSpots();
-
-  // Admin map setup
-  adminMap = L.map('admin-map').setView([25.9167, 89.4500], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-  }).addTo(adminMap);
 
   document.getElementById('save-dua').onclick = saveDua;
   document.getElementById('save-plan').onclick = savePlan;
   document.getElementById('save-hadith').onclick = saveHadith;
   document.getElementById('save-time').onclick = saveTimes;
 
+  // মসজিদ যোগের জন্য ম্যাপ + লোকেশন লজিক
+  let adminMap;
+  let adminPendingLat, adminPendingLng, adminAddingFromMap = false;
+
+  adminMap = L.map('admin-map').setView([25.9167, 89.4500], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(adminMap);
+
   document.getElementById('admin-gps-btn').onclick = getAdminGPSLocation;
+
   document.getElementById('admin-map-btn').onclick = () => {
     adminAddingFromMap = true;
-    adminStatus('ম্যাপে ক্লিক করুন', 'info');
+    adminStatus('ম্যাপে ক্লিক করুন লোকেশন নির্বাচন করতে', 'info');
   };
 
   adminMap.on('click', e => {
@@ -29,7 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminPendingLat = e.latlng.lat;
       adminPendingLng = e.latlng.lng;
       adminAddingFromMap = false;
-      adminStatus('লোকেশন নির্বাচিত!', 'success');
+      adminStatus('লোকেশন নির্বাচিত হয়েছে!', 'success');
     }
   });
 
@@ -39,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const spot = {
       name: document.getElementById('admin-name').value.trim(),
-      food: 'Mosjid',
+      food: 'মসজিদ',
       lat: adminPendingLat,
       lng: adminPendingLng
     };

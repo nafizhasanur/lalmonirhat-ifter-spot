@@ -357,3 +357,66 @@ footer {
   from { box-shadow: 0 0 10px rgba(46,125,50,0.2); }
   to { box-shadow: 0 0 25px rgba(46,125,50,0.4); }
 }
+/* style.css - Updated for button z-index, icon animation */
+
+.fab {
+  position: fixed;
+  z-index: 1001; /* Above map */
+  right: 24px;
+  width: 64px;
+  height: 64px;
+  background: #2e7d32;
+  color: white;
+  font-size: 2.2rem;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 6px 20px rgba(46,125,50,0.3);
+  cursor: pointer;
+}
+
+#music-btn {
+  bottom: 100px;
+}
+
+#add-btn {
+  bottom: 24px;
+}
+
+.custom-icon {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.vote-box {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+}
+
+.vote-item {
+  text-align: center;
+}
+
+.vote-btn {
+  display: block;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  width: 80px;
+  margin-bottom: 5px;
+}
+
+.green {
+  background: green;
+}
+
+.red {
+  background: red;
+}

@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycby-xUhfnIJ2XnsmNWGSMDGzYkPU2bWag3iQkHwaKBFciQ6O4oMyK0n-ThhyHWIUKkNN/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzdktu9biJ_PjsuLef-6rH3G3R0yRvrPBv0NUx_TSBFK22F8hzACn0grYMMsWmvXM3f/exec";
 
 let map;
 let spots = [];
@@ -12,7 +12,7 @@ const foodIcons = {
   'পিয়াজু': '🥟',
   'জুস': '🍹',
   'খেজুর': '🌴',
-  'Others': '🍽️'
+  'Others': '🍽️',
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('map-btn').onclick = () => {
     document.getElementById('add-modal').style.display = 'none';
     addingFromMap = true;
-    showStatus('ম্যাপে ক্লিক করুন লোকেশন নির্বাচন করতে', 'info');
+    showStatus('ম্যাপে ক্লিক করুন', 'info');
   };
 
   map.on('click', e => {
@@ -159,7 +159,7 @@ function renderSpots() {
   });
 
   spots.forEach(spot => {
-    const emoji = foodIcons[spot.food] || '🕌'; // Mosque icon if 'Mosjid' or no food
+    const emoji = foodIcons[spot.food] || '🕌'; // Mosque icon if 'মসজিদ' or no food
     const icon = L.divIcon({
       className: 'custom-icon animate-pulse',
       html: `<span style="font-size: 32px;">${emoji}</span>`,
@@ -171,9 +171,17 @@ function renderSpots() {
     const marker = L.marker([spot.lat, spot.lng], {icon}).addTo(map);
     let popupContent = `<b>${spot.name}</b><br>খাবার: ${spot.food || 'মসজিদ'}<br>`;
 
-    if (spot.food && spot.food !== 'Mosjid') {
-      popupContent += `<b>সত্য: ${spot.sotto}</b> <button class="vote-btn green" onclick="vote('${spot.id}', 'sotto')">✔</button><br>
-      <b>মিথ্যা: ${spot.mittha}</b> <button class="vote-btn red" onclick="vote('${spot.id}', 'mittha')">✖</button>`;
+    if (spot.food && spot.food !== 'মসজিদ') {
+      popupContent += `<div class="vote-box">
+        <div class="vote-item">
+          <button class="vote-btn green" onclick="vote('${spot.id}', 'sotto')">সত্য</button>
+          <span>${spot.sotto}</span>
+        </div>
+        <div class="vote-item">
+          <button class="vote-btn red" onclick="vote('${spot.id}', 'mittha')">মিথ্যা</button>
+          <span>${spot.mittha}</span>
+        </div>
+      </div>`;
     } else {
       popupContent += '<button onclick="addFoodToMosque(\'' + spot.id + '\',\'' + spot.name + '\',' + spot.lat + ',' + spot.lng + ')">খাবার যোগ করুন</button>';
     }
@@ -225,8 +233,8 @@ function addFoodToMosque(id, name, lat, lng) {
 
 function updateDateTime() {
   const now = new Date();
-  document.getElementById('current-date').textContent = now.toLocaleDateString('bn-BD') || 'তারিখ লোড হয়নি';
-  document.getElementById('current-day').textContent = now.toLocaleDateString('bn-BD', { weekday: 'long' }) || 'দিন লোড হয়নি';
+  document.getElementById('current-date').textContent = now.toLocaleDateString('bn-BD');
+  document.getElementById('current-day').textContent = now.toLocaleDateString('bn-BD', { weekday: 'long' });
 }
 
 function updateTimers() {
