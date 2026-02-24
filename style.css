@@ -491,3 +491,13 @@ footer {
   50% { transform: scale(1.15); }
   100% { transform: scale(1); }
 }
+.emoji-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-size: 40px !important; /* আইকন বড় করার জন্য */
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  pointer-events: none; /* tooltip-এ ক্লিক না হয় */
+}
