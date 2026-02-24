@@ -16,7 +16,7 @@ const foodIcons = {
   'মসজিদ': '🕌'
 };
 
-// Global functions for popup onclick
+// Global functions for popup onclick (vote + addFoodToMosque)
 window.vote = async function(id, type) {
   if (localStorage.getItem('voted_' + id)) return alert('আপনি ইতিমধ্যে ভোট দিয়েছেন!');
   try {
@@ -28,7 +28,7 @@ window.vote = async function(id, type) {
     if (!res.ok) throw new Error('Vote failed');
     localStorage.setItem('voted_' + id, 'true');
     alert('ভোট দেওয়া হয়েছে!');
-    loadSpots();
+    loadSpots(); // vote এর পর auto update
   } catch (err) {
     alert('ভোট দেওয়া যায়নি: ' + err.message);
   }
@@ -55,6 +55,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   updateDateTime();
   setInterval(updateTimers, 1000);
+
+  // অটো রিফ্রেশ - প্রতি ১০ সেকেন্ডে নতুন ডাটা চেক করবে (সব device-এ update দেখাবে)
+  setInterval(() => {
+    console.log('Auto refreshing spots...');
+    loadSpots();
+  }, 10000);
 
   document.getElementById('add-btn').onclick = () => {
     currentEditId = null;
@@ -184,6 +190,7 @@ async function loadSpots() {
 function renderSpots() {
   console.log('Rendering spots - count:', spots.length);
 
+  // পুরোনো মার্কার ক্লিয়ার
   map.eachLayer(layer => {
     if (layer instanceof L.Marker) map.removeLayer(layer);
   });
@@ -198,9 +205,15 @@ function renderSpots() {
       return;
     }
 
-    // Simple marker with emoji (fallback if divIcon fail)
-    const marker = L.marker([lat, lng]).addTo(map);
-    marker.bindTooltip(emoji, { permanent: true, direction: 'center', className: 'emoji-tooltip' });
+    const icon = L.divIcon({
+      html: `<span style="font-size: 40px; display: block; text-align: center; line-height: 1;">${emoji}</span>`,
+      className: 'custom-icon', // animation class
+      iconSize: [50, 50],
+      iconAnchor: [25, 50],
+      popupAnchor: [0, -50]
+    });
+
+    const marker = L.marker([lat, lng], { icon }).addTo(map);
 
     let popupContent = `<b>${spot.name}</b><br>খাবার: ${spot.food || 'মসজিদ'}<br><br>`;
 
@@ -208,12 +221,10 @@ function renderSpots() {
       popupContent += `
         <div class="vote-box">
           <div class="vote-item">
-            <button class="vote-btn green" onclick="vote('${spot.id}', 'sotto')">সত্য</button>
-            <span>${spot.sotto}</span>
+            <button class="vote-btn green" onclick="vote('${spot.id}', 'sotto')">সত্য (${spot.sotto})</button>
           </div>
           <div class="vote-item">
-            <button class="vote-btn red" onclick="vote('${spot.id}', 'mittha')">মিথ্যা</button>
-            <span>${spot.mittha}</span>
+            <button class="vote-btn red" onclick="vote('${spot.id}', 'mittha')">মিথ্যা (${spot.mittha})</button>
           </div>
         </div>`;
     } else {
@@ -223,6 +234,7 @@ function renderSpots() {
     marker.bindPopup(popupContent);
   });
 
+  // List-এ শুধু খাবার স্পট দেখানো
   const list = document.getElementById('spots-list');
   list.innerHTML = '';
   const foodSpots = spots.filter(spot => spot.food && spot.food !== 'মসজিদ');
