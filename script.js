@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!res.ok) throw new Error('Add failed');
       await loadSpots();
       closeModal();
-      alert('স্পট যোগ হয়েছে! ম্যাপে দেখতে রিফ্রেশ করুন।');
+      alert('স্পট যোগ হয়েছে!');
     } catch (err) {
       console.error('Add error:', err);
       alert('যোগ হয়নি: ' + err.message);
@@ -156,7 +156,6 @@ async function loadSpots() {
 function renderSpots() {
   console.log('Rendering spots - count:', spots.length);
 
-  // পুরোনো মার্কার ক্লিয়ার
   map.eachLayer(layer => {
     if (layer instanceof L.Marker) map.removeLayer(layer);
   });
@@ -202,7 +201,6 @@ function renderSpots() {
     marker.bindPopup(popupContent);
   });
 
-  // List-এ শুধু খাবার স্পট দেখানো (mosque বাদ)
   const list = document.getElementById('spots-list');
   list.innerHTML = '';
   const foodSpots = spots.filter(spot => spot.food && spot.food !== 'মসজিদ');
