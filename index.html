@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -17,11 +18,11 @@
       </div>
 
       <div class="plans-row">
-        <div class="plan-box animate-fade animate-glow">
+        <div class="plan-box">
           <h3>দোয়া</h3>
           <p id="dua-text">দোয়া লোড হচ্ছে...</p>
         </div>
-        <div class="plan-box animate-fade animate-glow">
+        <div class="plan-box">
           <h3>আজকের প্ল্যান</h3>
           <p id="plan-text">প্ল্যান লোড হচ্ছে...</p>
         </div>
@@ -29,12 +30,12 @@
     </header>
 
     <div class="timers">
-      <div class="timer sehri animate-fade animate-glow">
+      <div class="timer sehri">
         <h3>সেহরি</h3>
         <div class="time" id="sehri-time">--:--</div>
         <div class="countdown" id="sehri-countdown">00:00:00</div>
       </div>
-      <div class="timer iftar animate-fade animate-glow">
+      <div class="timer iftar">
         <h3>ইফতার</h3>
         <div class="time" id="iftar-time">--:--</div>
         <div class="countdown" id="iftar-countdown">00:00:00</div>
@@ -48,7 +49,7 @@
       <div id="spots-list"></div>
     </section>
 
-    <div class="hadith glass animate-fade animate-glow">
+    <div class="hadith glass">
       <p id="hadith-text">হাদিস লোড হচ্ছে...</p>
     </div>
   </div>
@@ -58,6 +59,7 @@
   </footer>
 
   <button id="add-btn" class="fab">+</button>
+  <button id="music-btn" class="fab music-btn" style="bottom: 90px;">||</button> <!-- Pause button -->
 
   <div id="add-modal" class="modal">
     <div class="modal-content">
@@ -73,6 +75,7 @@
           <option value="পিয়াজু">পিয়াজু</option>
           <option value="জুস">জুস</option>
           <option value="খেজুর">খেজুর</option>
+          <option value="Mosjid">মসজিদ (খাবার নেই)</option>
           <option value="Others">অন্যান্য</option>
         </select>
         <input type="text" id="other-food" placeholder="অন্য খাবার লিখুন" style="display:none;">
@@ -88,10 +91,8 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="script.js"></script>
- <!-- ব্যাকগ্রাউন্ড মিউজিক (কোনো বাটন ছাড়াই অটো-প্লে) -->
-<audio id="bg-music" autoplay loop>
-  <source src="Tala Al Badru Alaina  #ElCálamo - El Cálamo.mp3" type="audio/mpeg">
-  Your browser does not support the audio element.
-</audio>
+  <audio id="bg-music" loop>
+    <source src="Tala Al Badru Alaina  #ElCálamo - El Cálamo.mp3" type="audio/mpeg">
+  </audio>
 </body>
 </html>

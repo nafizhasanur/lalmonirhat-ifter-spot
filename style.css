@@ -1,3 +1,5 @@
+/* style.css - Updated with animations */
+
 :root {
   --bg: #f8fdf8;
   --card: #ffffff;
@@ -95,6 +97,10 @@ h1 {
   margin: 1.5rem 0;
 }
 
+.custom-icon {
+  animation: pulse 1.5s infinite;
+}
+
 #spots-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -139,6 +145,12 @@ h1 {
   box-shadow: 0 6px 20px rgba(46,125,50,0.3);
   cursor: pointer;
   animation: pulse 1.5s infinite;
+}
+
+.music-btn {
+  bottom: 100px;
+  background: var(--gold);
+  font-size: 1.5rem;
 }
 
 @keyframes pulse {
@@ -220,7 +232,6 @@ input, select, button {
   font-weight: 500;
 }
 
-/* ভোট বাটন অ্যানিমেশন */
 .vote-btn {
   padding: 8px 16px;
   border: none;
@@ -252,7 +263,6 @@ input, select, button {
   100% { transform: scale(1); }
 }
 
-/* ফুটার */
 footer {
   text-align: center;
   padding: 1rem;
@@ -261,7 +271,6 @@ footer {
   margin-top: 2rem;
 }
 
-/* অ্যানিমেশন */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(15px); }
   to { opacity: 1; transform: translateY(0); }
@@ -272,7 +281,6 @@ footer {
   to { box-shadow: 0 0 25px rgba(46,125,50,0.4); }
 }
 
-/* মোবাইল ফ্রেন্ডলি */
 @media (max-width: 600px) {
   .plans-row {
     flex-direction: column;

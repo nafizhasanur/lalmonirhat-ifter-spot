@@ -1,3 +1,5 @@
+// script.js - Updated with vote limit, animations, music pause, mosque icon
+
 const API_URL = "https://script.google.com/macros/s/AKfycbwNQtj1E56nCzkphsHP7VLiUvLyTej376BujqVKLzCJpIeBu9glDsfIuCM01KXVTXrz/exec";
 
 let map;
@@ -11,6 +13,7 @@ const foodIcons = {
   'পিয়াজু': '🥟',
   'জুস': '🍹',
   'খেজুর': '🌴',
+  'Mosjid': '🕌',
   'Others': '🍽️'
 };
 
@@ -20,10 +23,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     attribution: '© OpenStreetMap'
   }).addTo(map);
 
-  await Promise.all([
-    loadSpots(),
-    loadConfig()
-  ]);
+  await loadConfig();
+  await loadSpots();
 
   updateDateTime();
   setInterval(updateTimers, 1000);
@@ -45,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('map-btn').onclick = () => {
     document.getElementById('add-modal').style.display = 'none';
     addingFromMap = true;
-    showStatus('ম্যাপে ক্লিক করুন লোকেশন নির্বাচন করতে', 'info');
+    showStatus('ম্যাপে ক্লিক করুন', 'info');
   };
 
   map.on('click', e => {
@@ -78,117 +79,177 @@ document.addEventListener('DOMContentLoaded', async () => {
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: "add", ...spot })
       });
-      const text = await res.text();
-      console.log('Add response:', text);
       if (!res.ok) throw new Error('Add failed');
       await loadSpots();
       closeModal();
       alert('স্পট যোগ হয়েছে!');
     } catch (err) {
-      console.error('Add error:', err);
       alert('যোগ হয়নি: ' + err.message);
     }
   };
 
+  // Music setup with pause button
   const music = document.getElementById('bg-music');
-  if (music) {
-    music.volume = 0.3;
-    music.muted = true;
-    document.body.addEventListener('click', () => {
-      music.muted = false;
-      music.play().catch(() => {});
-    }, { once: true });
-  }
+  music.volume = 0.3;
+  music.play().catch(() => {});
+
+  document.getElementById('music-btn').onclick = () => {
+    if (music.paused) {
+      music.play();
+      document.getElementById('music-btn').textContent = '||';
+    } else {
+      music.pause();
+      document.getElementById('music-btn').textContent = '►';
+    }
+  };
 });
 
 async function loadConfig() {
   try {
-    const res = await fetch(API_URL + "?action=getConfig", {
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-    });
-    if (!res.ok) throw new Error('Config fetch failed ' + res.status);
+    const res = await fetch(API_URL + "?action=getConfig");
+    if (!res.ok) throw new Error('Config failed');
     let text = await res.text();
     text = text.trim().replace(/^\uFEFF/, '');
-    console.log('Config raw:', text);
     const config = JSON.parse(text);
 
-    document.getElementById('dua-text').textContent = config.dua || "দোয়া লোড হয়নি";
-    document.getElementById('plan-text').textContent = config.plan || "প্ল্যান লোড হয়নি";
-    document.getElementById('hadith-text').textContent = config.hadith || "হাদিস লোড হয়নি";
+    document.getElementById('dua-text').textContent = config.dua;
+    document.getElementById('plan-text').textContent = config.plan;
+    document.getElementById('hadith-text').textContent = config.hadith;
 
     const sehri = config.sehriTime || "05:30";
     const iftar = config.iftarTime || "18:05";
     localStorage.setItem('sehriTime', sehri);
     localStorage.setItem('iftarTime', iftar);
-
     document.getElementById('sehri-time').textContent = sehri;
     document.getElementById('iftar-time').textContent = iftar;
-
-    updateTimers(); // force countdown update
+    updateTimers();
   } catch (err) {
-    console.error("Config error:", err);
+    console.error("Config load error:", err);
   }
 }
 
 async function loadSpots() {
   try {
-    // এই ৩ লাইন যোগ করা হয়েছে (তোমার অনুরোধ অনুযায়ী)
-    console.log('Trying to fetch spots from:', API_URL + "?action=getAll");
-    const res = await fetch(API_URL + "?action=getAll");
-    console.log('Fetch status:', res.status);
-
     document.getElementById('spots-list').innerHTML = '<p>লোড হচ্ছে...</p>';
-    if (!res.ok) throw new Error('Spots fetch failed ' + res.status);
+    const res = await fetch(API_URL + "?action=getAll");
+    if (!res.ok) throw new Error('Spots failed');
     let text = await res.text();
     text = text.trim().replace(/^\uFEFF/, '');
-    console.log('Spots raw:', text);
     spots = JSON.parse(text);
-    console.log('Loaded spots count:', spots.length);
     renderSpots();
   } catch (err) {
-    console.error("Spots error:", err);
-    document.getElementById('spots-list').innerHTML = '<p style="color:red;">স্পট লোড হয়নি। (console দেখুন)</p>';
+    console.error("Spots load error:", err);
+    document.getElementById('spots-list').innerHTML = '<p style="color:red;">স্পট লোড হয়নি।</p>';
   }
 }
 
 function renderSpots() {
-  console.log('Rendering spots, count:', spots.length);
-
-  // Clear old markers
   map.eachLayer(layer => {
     if (layer instanceof L.Marker) map.removeLayer(layer);
   });
 
   spots.forEach(spot => {
-    const emoji = foodIcons[spot.food] || '🍲';
-    console.log('Marker for:', spot.name, emoji);
-
     const icon = L.divIcon({
-      html: `<span style="font-size:32px;">${emoji}</span>`,
-      className: '',
+      className: 'custom-icon',
+      html: `<span style="font-size: 32px;">${foodIcons[spot.food] || '🍲'}</span>`,
       iconSize: [40, 40],
       iconAnchor: [20, 40],
       popupAnchor: [0, -40]
     });
 
-    L.marker([spot.lat, spot.lng], {icon}).addTo(map)
-      .bindPopup(`<b>${spot.name}</b><br>খাবার: ${spot.food}<br>সত্য: ${spot.sotto} • মিথ্যা: ${spot.mittha}`);
+    const marker = L.marker([spot.lat, spot.lng], {icon}).addTo(map);
+    marker.bindPopup(`
+      <b>${spot.name}</b><br>
+      খাবার: ${spot.food}<br><br>
+      <b>সত্য: ${spot.sotto}</b> 
+      <button class="vote-btn green" onclick="vote('${spot.id}', 'sotto')">✔</button><br>
+      <b>মিথ্যা: ${spot.mittha}</b> 
+      <button class="vote-btn red" onclick="vote('${spot.id}', 'mittha')">✖</button>
+    `);
   });
 
-  // List render
   const list = document.getElementById('spots-list');
   list.innerHTML = '';
   spots.forEach(spot => {
     const card = document.createElement('div');
-    card.style = 'background:white; border:1px solid #ccc; padding:10px; margin:10px 0; border-radius:8px; cursor:pointer;';
+    card.className = 'spot-card';
     card.innerHTML = `
       <h3>${spot.name}</h3>
-      <p>${foodIcons[spot.food] || '🍲'} ${spot.food}</p>
+      <p>${spot.food}</p>
       <p>সত্য: ${spot.sotto} • মিথ্যা: ${spot.mittha}</p>
     `;
     card.onclick = () => map.setView([spot.lat, spot.lng], 16);
     list.appendChild(card);
   });
+}
+
+async function vote(id, type) {
+  if (localStorage.getItem('voted_' + id)) {
+    alert('আপনি এই স্পটে ইতিমধ্যে ভোট দিয়েছেন!');
+    return;
+  }
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: "vote", id, type })
+    });
+    if (!res.ok) throw new Error('Vote failed');
+    localStorage.setItem('voted_' + id, 'true');
+    alert('ভোট দেওয়া হয়েছে!');
+    loadSpots(); // refresh
+  } catch (err) {
+    alert('ভোট দেওয়া যায়নি: ' + err.message);
+  }
+}
+
+function updateDateTime() {
+  const now = new Date();
+  document.getElementById('current-date').textContent = now.toLocaleDateString('bn-BD');
+  document.getElementById('current-day').textContent = now.toLocaleDateString('bn-BD', { weekday: 'long' });
+}
+
+function updateTimers() {
+  const sehri = localStorage.getItem('sehriTime') || '05:30';
+  const iftar = localStorage.getItem('iftarTime') || '18:05';
+
+  document.getElementById('sehri-time').textContent = sehri;
+  document.getElementById('iftar-time').textContent = iftar;
+
+  const [sehriH, sehriM] = sehri.split(':').map(Number);
+  const [iftarH, iftarM] = iftar.split(':').map(Number);
+
+  const sehriTime = new Date();
+  sehriTime.setHours(sehriH, sehriM, 0);
+  const iftarTime = new Date();
+  iftarTime.setHours(iftarH, iftarM, 0);
+
+  const now = new Date();
+  document.getElementById('sehri-countdown').textContent = countdown(sehriTime - now);
+  document.getElementById('iftar-countdown').textContent = countdown(iftarTime - now);
+}
+
+function countdown(ms) {
+  if (ms <= 0) return 'সময় পার';
+  const h = Math.floor(ms / 3600000).toString().padStart(2, '0');
+  const m = Math.floor((ms % 3600000) / 60000).toString().padStart(2, '0');
+  const s = Math.floor((ms % 60000) / 1000).toString().padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
+
+function closeModal() {
+  document.getElementById('add-modal').style.display = 'none';
+  document.getElementById('add-form').reset();
+  document.getElementById('other-food').style.display = 'none';
+  pendingLat = pendingLng = null;
+  addingFromMap = false;
+}
+
+function showStatus(msg, type) {
+  const el = document.getElementById('loc-status');
+  el.textContent = msg;
+  el.className = 'status ' + type;
 }
 
 function getGPSLocation() {
