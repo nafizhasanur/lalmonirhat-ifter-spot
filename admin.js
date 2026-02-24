@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbw0GYUoDspZNPYKFewCV-D7DYTZMhCc4pCDarSqSdTe1b22a2HYpnX2xaQmvFe98cYN/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbw3Y_v-6XHls51q8y52wnlkuO8gY3vHFuWJo6FMamn7zbXSluk_WuzvVPbZ0MKLu5eX/exec";
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadConfig();
@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: "add", ...spot })
+        body: JSON.stringify({ action: "add", secret: "lal09%", ...spot })
       });
       if (!res.ok) throw new Error('Add failed');
       alert('মসজিদ যোগ হয়েছে!');
@@ -116,7 +116,11 @@ async function loadSpots() {
 async function saveDua() {
   const text = document.getElementById('dua-text').value.trim();
   if (!text) return alert('দোয়া লিখুন');
-  await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "saveDua", text }) });
+  await fetch(API_URL, { 
+    method: 'POST', 
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+    body: JSON.stringify({ action: "saveDua", secret: "lal09%", text }) 
+  });
   alert('দোয়া সেভ হয়েছে!');
   loadConfig();
 }
@@ -124,7 +128,11 @@ async function saveDua() {
 async function savePlan() {
   const text = document.getElementById('plan-text').value.trim();
   if (!text) return alert('প্ল্যান লিখুন');
-  await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "savePlan", text }) });
+  await fetch(API_URL, { 
+    method: 'POST', 
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+    body: JSON.stringify({ action: "savePlan", secret: "lal09%", text }) 
+  });
   alert('প্ল্যান সেভ হয়েছে!');
   loadConfig();
 }
@@ -132,7 +140,11 @@ async function savePlan() {
 async function saveHadith() {
   const text = document.getElementById('hadith-text').value.trim();
   if (!text) return alert('হাদিস লিখুন');
-  await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "saveHadith", text }) });
+  await fetch(API_URL, { 
+    method: 'POST', 
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+    body: JSON.stringify({ action: "saveHadith", secret: "lal09%", text }) 
+  });
   alert('হাদিস সেভ হয়েছে!');
   loadConfig();
 }
@@ -141,7 +153,11 @@ async function saveTimes() {
   const sehri = document.getElementById('sehri-input').value.trim();
   const iftar = document.getElementById('iftar-input').value.trim();
   if (!sehri || !iftar) return alert('সময় দিন');
-  await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "saveTimes", sehri, iftar }) });
+  await fetch(API_URL, { 
+    method: 'POST', 
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+    body: JSON.stringify({ action: "saveTimes", secret: "lal09%", sehri, iftar }) 
+  });
   alert('সময় সেভ হয়েছে!');
   loadConfig();
 }
@@ -154,7 +170,21 @@ async function editSpot(id) {
   const sotto = prompt('নতুন সত্য:', '');
   const mittha = prompt('নতুন মিথ্যা:', '');
   if (name && food) {
-    await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "edit", id, name, food, lat: parseFloat(lat), lng: parseFloat(lng), sotto: parseInt(sotto), mittha: parseInt(mittha) }) });
+    await fetch(API_URL, { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+      body: JSON.stringify({ 
+        action: "edit", 
+        secret: "lal09%", 
+        id, 
+        name, 
+        food, 
+        lat: parseFloat(lat), 
+        lng: parseFloat(lng), 
+        sotto: parseInt(sotto), 
+        mittha: parseInt(mittha) 
+      }) 
+    });
     alert('এডিট হয়েছে!');
     loadSpots();
   }
@@ -162,7 +192,11 @@ async function editSpot(id) {
 
 async function deleteSpot(id) {
   if (confirm('ডিলিট করবেন?')) {
-    await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "delete", id }) });
+    await fetch(API_URL, { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+      body: JSON.stringify({ action: "delete", secret: "lal09%", id }) 
+    });
     alert('ডিলিট হয়েছে!');
     loadSpots();
   }

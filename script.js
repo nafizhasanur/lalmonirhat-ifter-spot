@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbw0GYUoDspZNPYKFewCV-D7DYTZMhCc4pCDarSqSdTe1b22a2HYpnX2xaQmvFe98cYN/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbw3Y_v-6XHls51q8y52wnlkuO8gY3vHFuWJo6FMamn7zbXSluk_WuzvVPbZ0MKLu5eX/exec";
 
 let map;
 let spots = [];
@@ -23,7 +23,7 @@ window.vote = async function(id, type) {
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: "vote", id, type })
+      body: JSON.stringify({ action: "vote", id, type, secret: "lal09%" })
     });
     if (!res.ok) throw new Error('Vote failed');
     localStorage.setItem('voted_' + id, 'true');
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: currentEditId ? "edit" : "add", id: currentEditId, ...spot })
+        body: JSON.stringify({ action: currentEditId ? "edit" : "add", id: currentEditId, secret: "lal09%", ...spot })
       });
       const text = await res.text();
       console.log('Add response:', text);
@@ -263,13 +263,14 @@ function renderSpots() {
     list.appendChild(card);
   });
 }
+
 async function vote(id, type) {
   if (localStorage.getItem('voted_' + id)) return alert('আপনি ইতিমধ্যে ভোট দিয়েছেন!');
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: "vote", id, type })
+      body: JSON.stringify({ action: "vote", id, type, secret: "lal09%" })
     });
     if (!res.ok) throw new Error('Vote failed');
     localStorage.setItem('voted_' + id, 'true');
@@ -350,47 +351,5 @@ function getGPSLocation() {
       pendingLng = pos.coords.longitude;
       showStatus('GPS দিয়ে লোকেশন নেওয়া হয়েছে!', 'success');
     }, () => showStatus('GPS পাওয়া যায়নি', 'error'));
-  }
-}
-
-// Admin editSpot function (নতুন যোগ করা)
-async function editSpot(id) {
-  const name = prompt('নতুন নাম:', '');
-  const food = prompt('নতুন খাবার:', '');
-  const latStr = prompt('নতুন Lat:', '');
-  const lngStr = prompt('নতুন Lng:', '');
-  const sotto = prompt('নতুন সত্য:', '');
-  const mittha = prompt('নতুন মিথ্যা:', '');
-
-  const lat = parseFloat(latStr);
-  const lng = parseFloat(lngStr);
-
-  if (name && food && !isNaN(lat) && !isNaN(lng)) {
-    const spot = {
-      id,
-      name,
-      food,
-      lat,
-      lng,
-      sotto: parseInt(sotto) || 0,
-      mittha: parseInt(mittha) || 0
-    };
-
-    try {
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: "edit", ...spot })
-      });
-      const text = await res.text();
-      console.log('Edit response:', text);
-      if (!res.ok) throw new Error('Edit failed');
-      alert('এডিট হয়েছে!');
-      loadSpots(); // admin list refresh
-    } catch (err) {
-      alert('এডিট হয়নি: ' + err.message);
-    }
-  } else {
-    alert('সব তথ্য ঠিকমতো দিন (Lat/Lng number হতে হবে)');
   }
 }
