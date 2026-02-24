@@ -302,3 +302,58 @@ footer {
     font-size: 2rem;
   }
 }
+/* Style updates for animations, button positions */
+
+.root {
+  --green: #2e7d32;
+  --red: #d32f2f;
+  --shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.fab {
+  position: fixed !important;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000; /* Above map */
+  width: 64px;
+  height: 64px;
+  background: var(--green);
+  color: white;
+  font-size: 2.2rem;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 6px 20px rgba(46,125,50,0.3);
+  cursor: pointer;
+}
+
+#music-btn {
+  bottom: 100px;
+}
+
+.custom-icon {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.animate-fade {
+  animation: fadeIn 1s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-glow {
+  animation: fadeGlow 2.5s infinite alternate;
+}
+
+@keyframes fadeGlow {
+  from { box-shadow: 0 0 10px rgba(46,125,50,0.2); }
+  to { box-shadow: 0 0 25px rgba(46,125,50,0.4); }
+}

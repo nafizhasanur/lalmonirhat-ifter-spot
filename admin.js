@@ -1,20 +1,71 @@
+const API_URL = "https://script.google.com/macros/s/AKfycby-xUhfnIJ2XnsmNWGSMDGzYkPU2bWag3iQkHwaKBFciQ6O4oMyK0n-ThhyHWIUKkNN/exec";
 
-const API_URL = "https://script.google.com/macros/s/AKfycbxtwUhYG0rg4DsotZQijbSXvcY1D608zYWMhpMp5zGkHtZpXMri62xvr7yyCE5GRBPJ/exec";
+let adminMap;
+let adminPendingLat, adminPendingLng, adminAddingFromMap = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadConfig();
   await loadSpots();
 
+  // Admin map setup
+  adminMap = L.map('admin-map').setView([25.9167, 89.4500], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(adminMap);
+
   document.getElementById('save-dua').onclick = saveDua;
   document.getElementById('save-plan').onclick = savePlan;
   document.getElementById('save-hadith').onclick = saveHadith;
   document.getElementById('save-time').onclick = saveTimes;
-  document.getElementById('add-spot-btn').onclick = addSpotAdmin;
+
+  document.getElementById('admin-gps-btn').onclick = getAdminGPSLocation;
+  document.getElementById('admin-map-btn').onclick = () => {
+    adminAddingFromMap = true;
+    adminStatus('ম্যাপে ক্লিক করুন', 'info');
+  };
+
+  adminMap.on('click', e => {
+    if (adminAddingFromMap) {
+      adminPendingLat = e.latlng.lat;
+      adminPendingLng = e.latlng.lng;
+      adminAddingFromMap = false;
+      adminStatus('লোকেশন নির্বাচিত!', 'success');
+    }
+  });
+
+  document.getElementById('admin-add-form').onsubmit = async e => {
+    e.preventDefault();
+    if (!adminPendingLat || !adminPendingLng) return adminStatus('লোকেশন দিন', 'error');
+
+    const spot = {
+      name: document.getElementById('admin-name').value.trim(),
+      food: 'Mosjid',
+      lat: adminPendingLat,
+      lng: adminPendingLng
+    };
+
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: "add", ...spot })
+      });
+      if (!res.ok) throw new Error('Add failed');
+      alert('মসজিদ যোগ হয়েছে!');
+      loadSpots();
+      document.getElementById('admin-add-form').reset();
+      adminPendingLat = adminPendingLng = null;
+    } catch (err) {
+      alert('যোগ হয়নি: ' + err.message);
+    }
+  };
 });
 
 async function loadConfig() {
   try {
-    const res = await fetch(API_URL + "?action=getConfig");
+    const res = await fetch(API_URL + "?action=getConfig", {
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    });
     if (!res.ok) throw new Error('Config failed');
     let text = await res.text();
     text = text.trim().replace(/^\uFEFF/, '');
@@ -32,7 +83,9 @@ async function loadConfig() {
 
 async function loadSpots() {
   try {
-    const res = await fetch(API_URL + "?action=getAll");
+    const res = await fetch(API_URL + "?action=getAll", {
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    });
     if (!res.ok) throw new Error('Spots failed');
     let text = await res.text();
     text = text.trim().replace(/^\uFEFF/, '');
@@ -92,24 +145,13 @@ async function saveTimes() {
   loadConfig();
 }
 
-async function addSpotAdmin() {
-  const name = document.getElementById('add-name').value.trim();
-  const food = document.getElementById('add-food').value.trim();
-  const lat = parseFloat(document.getElementById('add-lat').value);
-  const lng = parseFloat(document.getElementById('add-lng').value);
-  if (!name || !food || isNaN(lat) || isNaN(lng)) return alert('সব তথ্য দিন');
-  await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "add", name, food, lat, lng }) });
-  alert('যোগ হয়েছে!');
-  loadSpots();
-}
-
 async function editSpot(id) {
-  const name = prompt('নতুন নাম:');
-  const food = prompt('নতুন খাবার:');
-  const lat = prompt('নতুন Lat:');
-  const lng = prompt('নতুন Lng:');
-  const sotto = prompt('নতুন সত্য:');
-  const mittha = prompt('নতুন মিথ্যা:');
+  const name = prompt('নতুন নাম:', '');
+  const food = prompt('নতুন খাবার:', '');
+  const lat = prompt('নতুন Lat:', '');
+  const lng = prompt('নতুন Lng:', '');
+  const sotto = prompt('নতুন সত্য:', '');
+  const mittha = prompt('নতুন মিথ্যা:', '');
   if (name && food) {
     await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "edit", id, name, food, lat: parseFloat(lat), lng: parseFloat(lng), sotto: parseInt(sotto), mittha: parseInt(mittha) }) });
     alert('এডিট হয়েছে!');
@@ -123,4 +165,20 @@ async function deleteSpot(id) {
     alert('ডিলিট হয়েছে!');
     loadSpots();
   }
+}
+
+function getAdminGPSLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      adminPendingLat = pos.coords.latitude;
+      adminPendingLng = pos.coords.longitude;
+      adminStatus('GPS দিয়ে লোকেশন নেওয়া হয়েছে!', 'success');
+    }, () => adminStatus('GPS পাওয়া যায়নি', 'error'));
+  }
+}
+
+function adminStatus(msg, type) {
+  const el = document.getElementById('admin-loc-status');
+  el.textContent = msg;
+  el.className = 'status ' + type;
 }
