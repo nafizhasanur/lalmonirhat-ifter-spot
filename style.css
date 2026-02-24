@@ -420,3 +420,25 @@ footer {
 .red {
   background: red;
 }
+.vote-box {
+  display: flex;
+  justify-content: space-around;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.vote-item {
+  text-align: center;
+}
+
+.vote-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.green { background: #4CAF50; }
+.red { background: #f44336; }

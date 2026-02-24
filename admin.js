@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzdktu9biJ_PjsuLef-6rH3G3R0yRvrPBv0NUx_TSBFK22F8hzACn0grYMMsWmvXM3f/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbw0GYUoDspZNPYKFewCV-D7DYTZMhCc4pCDarSqSdTe1b22a2HYpnX2xaQmvFe98cYN/exec";
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadConfig();
