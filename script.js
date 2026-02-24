@@ -190,7 +190,6 @@ async function loadSpots() {
 function renderSpots() {
   console.log('Rendering spots - count:', spots.length);
 
-  // পুরোনো মার্কার ক্লিয়ার
   map.eachLayer(layer => {
     if (layer instanceof L.Marker) map.removeLayer(layer);
   });
@@ -207,7 +206,7 @@ function renderSpots() {
 
     const icon = L.divIcon({
       html: `<span style="font-size: 40px; display: block; text-align: center; line-height: 1;">${emoji}</span>`,
-      className: 'custom-icon', // animation class
+      className: 'custom-icon',
       iconSize: [50, 50],
       iconAnchor: [25, 50],
       popupAnchor: [0, -50]
@@ -234,7 +233,6 @@ function renderSpots() {
     marker.bindPopup(popupContent);
   });
 
-  // List-এ শুধু খাবার স্পট দেখানো
   const list = document.getElementById('spots-list');
   list.innerHTML = '';
   const foodSpots = spots.filter(spot => spot.food && spot.food !== 'মসজিদ');
@@ -338,5 +336,47 @@ function getGPSLocation() {
       pendingLng = pos.coords.longitude;
       showStatus('GPS দিয়ে লোকেশন নেওয়া হয়েছে!', 'success');
     }, () => showStatus('GPS পাওয়া যায়নি', 'error'));
+  }
+}
+
+// Admin editSpot function (নতুন যোগ করা)
+async function editSpot(id) {
+  const name = prompt('নতুন নাম:', '');
+  const food = prompt('নতুন খাবার:', '');
+  const latStr = prompt('নতুন Lat:', '');
+  const lngStr = prompt('নতুন Lng:', '');
+  const sotto = prompt('নতুন সত্য:', '');
+  const mittha = prompt('নতুন মিথ্যা:', '');
+
+  const lat = parseFloat(latStr);
+  const lng = parseFloat(lngStr);
+
+  if (name && food && !isNaN(lat) && !isNaN(lng)) {
+    const spot = {
+      id,
+      name,
+      food,
+      lat,
+      lng,
+      sotto: parseInt(sotto) || 0,
+      mittha: parseInt(mittha) || 0
+    };
+
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: "edit", ...spot })
+      });
+      const text = await res.text();
+      console.log('Edit response:', text);
+      if (!res.ok) throw new Error('Edit failed');
+      alert('এডিট হয়েছে!');
+      loadSpots(); // admin list refresh
+    } catch (err) {
+      alert('এডিট হয়নি: ' + err.message);
+    }
+  } else {
+    alert('সব তথ্য ঠিকমতো দিন (Lat/Lng number হতে হবে)');
   }
 }
