@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('map-btn').onclick = () => {
     document.getElementById('add-modal').style.display = 'none';
     addingFromMap = true;
-    showStatus('ম্যাপে ক্লিক করুন', 'info');
+    showStatus('ম্যাপে ক্লিক করুন লোকেশন নির্বাচন করতে', 'info');
   };
 
   map.on('click', e => {
@@ -83,9 +83,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const text = await res.text();
       console.log('Add response:', text);
       if (!res.ok) throw new Error('Add failed');
-      await loadSpots(); // add এর পর সব refresh
+      await loadSpots();
       closeModal();
-      alert('স্পট যোগ হয়েছে! রিফ্রেশ করুন যদি না দেখা যায়।');
+      alert('স্পট যোগ হয়েছে! ম্যাপে দেখতে রিফ্রেশ করুন।');
     } catch (err) {
       console.error('Add error:', err);
       alert('যোগ হয়নি: ' + err.message);
@@ -93,22 +93,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   const music = document.getElementById('bg-music');
-  music.volume = 0.3;
-  music.play().catch(() => {});
-  document.getElementById('music-btn').onclick = () => {
-    if (music.paused) {
-      music.play();
-      document.getElementById('music-btn').textContent = '||';
-    } else {
-      music.pause();
-      document.getElementById('music-btn').textContent = '►';
-    }
-  };
+  if (music) {
+    music.volume = 0.3;
+    music.play().catch(() => {});
+    document.getElementById('music-btn').onclick = () => {
+      if (music.paused) {
+        music.play();
+        document.getElementById('music-btn').textContent = '||';
+      } else {
+        music.pause();
+        document.getElementById('music-btn').textContent = '►';
+      }
+    };
+  }
 });
 
 async function loadConfig() {
   try {
-    const res = await fetch(API_URL + "?action=getConfig");
+    const res = await fetch(API_URL + "?action=getConfig", {
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    });
     if (!res.ok) throw new Error('Config failed');
     let text = await res.text();
     text = text.trim().replace(/^\uFEFF/, '');
@@ -133,23 +137,26 @@ async function loadConfig() {
 async function loadSpots() {
   try {
     document.getElementById('spots-list').innerHTML = '<p>লোড হচ্ছে...</p>';
-    const res = await fetch(API_URL + "?action=getAll");
+    const res = await fetch(API_URL + "?action=getAll", {
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    });
     if (!res.ok) throw new Error('Spots failed');
     let text = await res.text();
     text = text.trim().replace(/^\uFEFF/, '');
-    console.log('Spots raw:', text);
+    console.log('Spots raw response:', text);
     spots = JSON.parse(text);
-    console.log('Loaded spots:', spots);
+    console.log('Parsed spots count:', spots.length);
     renderSpots();
   } catch (err) {
-    console.error("Spots load error:", err);
-    document.getElementById('spots-list').innerHTML = '<p style="color:red;">স্পট লোড হয়নি।</p>';
+    console.error("Spots load error:", err.message);
+    document.getElementById('spots-list').innerHTML = '<p style="color:red;">স্পট লোড হয়নি। Console দেখুন।</p>';
   }
 }
 
 function renderSpots() {
   console.log('Rendering spots - count:', spots.length);
 
+  // পুরোনো মার্কার ক্লিয়ার
   map.eachLayer(layer => {
     if (layer instanceof L.Marker) map.removeLayer(layer);
   });
@@ -160,7 +167,7 @@ function renderSpots() {
     const lng = parseFloat(spot.lng);
 
     if (isNaN(lat) || isNaN(lng)) {
-      console.warn('Invalid lat/lng for spot:', spot.name);
+      console.warn('Invalid lat/lng for spot:', spot.name, spot.lat, spot.lng);
       return;
     }
 
@@ -180,21 +187,22 @@ function renderSpots() {
       popupContent += `
         <div class="vote-box">
           <div class="vote-item">
-            <button class="vote-btn green" onclick="window.vote('${spot.id}', 'sotto')">সত্য</button>
+            <button class="vote-btn green" onclick="vote('${spot.id}', 'sotto')">সত্য</button>
             <span>${spot.sotto}</span>
           </div>
           <div class="vote-item">
-            <button class="vote-btn red" onclick="window.vote('${spot.id}', 'mittha')">মিথ্যা</button>
+            <button class="vote-btn red" onclick="vote('${spot.id}', 'mittha')">মিথ্যা</button>
             <span>${spot.mittha}</span>
           </div>
         </div>`;
     } else {
-      popupContent += '<button onclick="window.addFoodToMosque(\'' + spot.id + '\',\'' + spot.name + '\',' + lat + ',' + lng + ')">খাবার যোগ করুন</button>';
+      popupContent += '<button onclick="addFoodToMosque(\'' + spot.id + '\',\'' + spot.name + '\',' + lat + ',' + lng + ')">খাবার যোগ করুন</button>';
     }
 
     marker.bindPopup(popupContent);
   });
 
+  // List-এ শুধু খাবার স্পট দেখানো (mosque বাদ)
   const list = document.getElementById('spots-list');
   list.innerHTML = '';
   const foodSpots = spots.filter(spot => spot.food && spot.food !== 'মসজিদ');
@@ -211,8 +219,7 @@ function renderSpots() {
   });
 }
 
-// Global scope-এ vote + addFoodToMosque ফাংশন যোগ করা (popup onclick-এর জন্য)
-window.vote = async function(id, type) {
+async function vote(id, type) {
   if (localStorage.getItem('voted_' + id)) return alert('আপনি ইতিমধ্যে ভোট দিয়েছেন!');
   try {
     const res = await fetch(API_URL, {
@@ -227,9 +234,9 @@ window.vote = async function(id, type) {
   } catch (err) {
     alert('ভোট দেওয়া যায়নি: ' + err.message);
   }
-};
+}
 
-window.addFoodToMosque = function(id, name, lat, lng) {
+function addFoodToMosque(id, name, lat, lng) {
   currentEditId = id;
   pendingLat = lat;
   pendingLng = lng;
@@ -237,6 +244,67 @@ window.addFoodToMosque = function(id, name, lat, lng) {
   document.getElementById('name').disabled = true;
   document.getElementById('add-modal').style.display = 'flex';
   document.querySelector('.modal-content h2').textContent = 'মসজিদে খাবার যোগ করুন';
-};
+}
 
-// বাকি ফাংশন (updateDateTime, updateTimers, countdown, closeModal, showStatus, getGPSLocation) আগের মতো রাখো
+function updateDateTime() {
+  const now = new Date();
+  document.getElementById('current-date').textContent = now.toLocaleDateString('bn-BD');
+  document.getElementById('current-day').textContent = now.toLocaleDateString('bn-BD', { weekday: 'long' });
+}
+
+function updateTimers() {
+  const sehri = localStorage.getItem('sehriTime') || '05:30';
+  const iftar = localStorage.getItem('iftarTime') || '18:05';
+
+  document.getElementById('sehri-time').textContent = sehri;
+  document.getElementById('iftar-time').textContent = iftar;
+
+  const [sehriH, sehriM] = sehri.split(':').map(Number);
+  const [iftarH, iftarM] = iftar.split(':').map(Number);
+
+  const sehriTime = new Date();
+  sehriTime.setHours(sehriH, sehriM, 0);
+  const iftarTime = new Date();
+  iftarTime.setHours(iftarH, iftarM, 0);
+
+  const now = new Date();
+  document.getElementById('sehri-countdown').textContent = countdown(sehriTime - now);
+  document.getElementById('iftar-countdown').textContent = countdown(iftarTime - now);
+}
+
+function countdown(ms) {
+  if (ms <= 0) return 'সময় পার';
+  const h = Math.floor(ms / 3600000).toString().padStart(2, '0');
+  const m = Math.floor((ms % 3600000) / 60000).toString().padStart(2, '0');
+  const s = Math.floor((ms % 60000) / 1000).toString().padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
+
+function closeModal() {
+  document.getElementById('add-modal').style.display = 'none';
+  document.getElementById('add-form').reset();
+  document.getElementById('other-food').style.display = 'none';
+  document.getElementById('name').disabled = false;
+  document.querySelector('.modal-content h2').textContent = 'নতুন স্পট যোগ করুন';
+  pendingLat = pendingLng = null;
+  addingFromMap = false;
+  currentEditId = null;
+}
+
+function showStatus(msg, type) {
+  const el = document.getElementById('loc-status');
+  if (el) {
+    el.textContent = msg;
+    el.className = 'status ' + type;
+  }
+}
+
+function getGPSLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      pendingLat = pos.coords.latitude;
+      pendingLng = pos.coords.longitude;
+      showStatus('GPS দিয়ে লোকেশন নেওয়া হয়েছে!', 'success');
+    }, () => showStatus('GPS পাওয়া যায়নি', 'error'));
+  }
+}
