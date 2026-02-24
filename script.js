@@ -200,31 +200,26 @@ function renderSpots() {
     const lng = parseFloat(spot.lng);
 
     if (isNaN(lat) || isNaN(lng)) {
-      console.warn('Invalid lat/lng for spot:', spot.name, spot.lat, spot.lng);
+      console.warn('Invalid lat/lng:', spot.name);
       return;
     }
 
-    const icon = L.divIcon({
-      html: `<span style="font-size: 40px; display: block; text-align: center; line-height: 1;">${emoji}</span>`,
-      className: 'custom-icon',
-      iconSize: [50, 50],
-      iconAnchor: [25, 50],
-      popupAnchor: [0, -50]
+    // Simple marker + permanent tooltip with emoji (এটা সব ব্রাউজারে কাজ করে)
+    const marker = L.marker([lat, lng]).addTo(map);
+    marker.bindTooltip(emoji, {
+      permanent: true,
+      direction: 'center',
+      className: 'emoji-tooltip',
+      offset: [0, -20]
     });
-
-    const marker = L.marker([lat, lng], { icon }).addTo(map);
 
     let popupContent = `<b>${spot.name}</b><br>খাবার: ${spot.food || 'মসজিদ'}<br><br>`;
 
     if (spot.food && spot.food !== 'মসজিদ') {
       popupContent += `
         <div class="vote-box">
-          <div class="vote-item">
-            <button class="vote-btn green" onclick="vote('${spot.id}', 'sotto')">সত্য (${spot.sotto})</button>
-          </div>
-          <div class="vote-item">
-            <button class="vote-btn red" onclick="vote('${spot.id}', 'mittha')">মিথ্যা (${spot.mittha})</button>
-          </div>
+          <button class="vote-btn green" onclick="vote('${spot.id}', 'sotto')">সত্য (${spot.sotto})</button>
+          <button class="vote-btn red" onclick="vote('${spot.id}', 'mittha')">মিথ্যা (${spot.mittha})</button>
         </div>`;
     } else {
       popupContent += '<button onclick="addFoodToMosque(\'' + spot.id + '\',\'' + spot.name + '\',' + lat + ',' + lng + ')">খাবার যোগ করুন</button>';

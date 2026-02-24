@@ -477,3 +477,12 @@ footer {
 .vote-btn.red {
   background: #f44336;
 }
+.emoji-tooltip {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  font-size: 32px !important;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+}
