@@ -190,6 +190,7 @@ async function loadSpots() {
 function renderSpots() {
   console.log('Rendering spots - count:', spots.length);
 
+  // পুরোনো মার্কার সব মুছে ফেলা
   map.eachLayer(layer => {
     if (layer instanceof L.Marker) map.removeLayer(layer);
   });
@@ -200,18 +201,36 @@ function renderSpots() {
     const lng = parseFloat(spot.lng);
 
     if (isNaN(lat) || isNaN(lng)) {
-      console.warn('Invalid lat/lng:', spot.name);
+      console.warn('Invalid lat/lng for spot:', spot.name);
       return;
     }
 
-    // Simple marker + permanent tooltip with emoji (এটা সব ব্রাউজারে কাজ করে)
-    const marker = L.marker([lat, lng]).addTo(map);
-    marker.bindTooltip(emoji, {
-      permanent: true,
-      direction: 'center',
-      className: 'emoji-tooltip',
-      offset: [0, -20]
+    // বড় গোলাকার আইকন (তোমার স্ক্রিনশটের মতো)
+    const icon = L.divIcon({
+      html: `
+        <div style="
+          width: 48px;
+          height: 48px;
+          background: white;
+          border: 3px solid #333;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 28px;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+          animation: pulse 2s infinite;
+        ">
+          ${emoji}
+        </div>
+      `,
+      className: '', // খালি রাখা যাতে Leaflet extra style না দেয়
+      iconSize: [48, 48],
+      iconAnchor: [24, 24], // কেন্দ্র থেকে anchor
+      popupAnchor: [0, -24]
     });
+
+    const marker = L.marker([lat, lng], { icon }).addTo(map);
 
     let popupContent = `<b>${spot.name}</b><br>খাবার: ${spot.food || 'মসজিদ'}<br><br>`;
 
@@ -228,6 +247,7 @@ function renderSpots() {
     marker.bindPopup(popupContent);
   });
 
+  // List-এ শুধু খাবার স্পট দেখানো (mosque বাদ)
   const list = document.getElementById('spots-list');
   list.innerHTML = '';
   const foodSpots = spots.filter(spot => spot.food && spot.food !== 'মসজিদ');
@@ -243,7 +263,6 @@ function renderSpots() {
     list.appendChild(card);
   });
 }
-
 async function vote(id, type) {
   if (localStorage.getItem('voted_' + id)) return alert('আপনি ইতিমধ্যে ভোট দিয়েছেন!');
   try {
