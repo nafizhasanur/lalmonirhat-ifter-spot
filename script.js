@@ -3,7 +3,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw0GYUoDspZNPYKFewCV-D7
 let map;
 let spots = [];
 let pendingLat, pendingLng, addingFromMap = false;
-let currentEditId = null; // For adding food to mosque
+let currentEditId = null;
 
 const foodIcons = {
   'বিরিয়ানি': '🍲',
@@ -13,6 +13,7 @@ const foodIcons = {
   'জুস': '🍹',
   'খেজুর': '🌴',
   'Others': '🍽️',
+  'মসজিদ': '🕌'
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -28,7 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setInterval(updateTimers, 1000);
 
   document.getElementById('add-btn').onclick = () => {
-    currentEditId = null; // New spot
+    currentEditId = null;
     document.getElementById('name').disabled = false;
     document.getElementById('add-modal').style.display = 'flex';
   };
@@ -74,37 +75,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     try {
-      let action = currentEditId ? "edit" : "add";
-      const body = JSON.stringify({ action, id: currentEditId, ...spot });
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body
+        body: JSON.stringify({ action: currentEditId ? "edit" : "add", id: currentEditId, ...spot })
       });
-      if (!res.ok) throw new Error('Operation failed');
+      if (!res.ok) throw new Error('Add failed');
       await loadSpots();
       closeModal();
-      alert('স্পট যোগ/আপডেট হয়েছে!');
+      alert('স্পট যোগ হয়েছে!');
     } catch (err) {
       alert('যোগ হয়নি: ' + err.message);
     }
   };
 
-  // Music control
   const music = document.getElementById('bg-music');
-  if (music) {
-    music.volume = 0.3;
-    music.play().catch(() => {});
-    document.getElementById('music-btn').onclick = () => {
-      if (music.paused) {
-        music.play();
-        document.getElementById('music-btn').textContent = '||';
-      } else {
-        music.pause();
-        document.getElementById('music-btn').textContent = '►';
-      }
-    };
-  }
+  music.volume = 0.3;
+  music.play().catch(() => {});
+  document.getElementById('music-btn').onclick = () => {
+    if (music.paused) {
+      music.play();
+      document.getElementById('music-btn').textContent = '||';
+    } else {
+      music.pause();
+      document.getElementById('music-btn').textContent = '►';
+    }
+  };
 });
 
 async function loadConfig() {
@@ -130,9 +126,6 @@ async function loadConfig() {
     updateTimers();
   } catch (err) {
     console.error("Config load error:", err);
-    document.getElementById('sehri-time').textContent = "05:30";
-    document.getElementById('iftar-time').textContent = "18:05";
-    updateTimers();
   }
 }
 
@@ -159,29 +152,30 @@ function renderSpots() {
   });
 
   spots.forEach(spot => {
-    const emoji = foodIcons[spot.food] || '🕌'; // Mosque icon if 'মসজিদ' or no food
+    const emoji = foodIcons[spot.food] || '🕌';
     const icon = L.divIcon({
-      className: 'custom-icon animate-pulse',
-      html: `<span style="font-size: 32px;">${emoji}</span>`,
+      className: 'custom-icon',
+      html: `<div style="font-size: 32px; text-align: center;">${emoji}</div>`,
       iconSize: [40, 40],
       iconAnchor: [20, 40],
       popupAnchor: [0, -40]
     });
 
-    const marker = L.marker([spot.lat, spot.lng], {icon}).addTo(map);
-    let popupContent = `<b>${spot.name}</b><br>খাবার: ${spot.food || 'মসজিদ'}<br>`;
+    const marker = L.marker([spot.lat, spot.lng], { icon }).addTo(map);
+    let popupContent = `<b>${spot.name}</b><br>খাবার: ${spot.food || 'মসজিদ'}<br><br>`;
 
     if (spot.food && spot.food !== 'মসজিদ') {
-      popupContent += `<div class="vote-box">
-        <div class="vote-item">
-          <button class="vote-btn green" onclick="vote('${spot.id}', 'sotto')">সত্য</button>
-          <span>${spot.sotto}</span>
-        </div>
-        <div class="vote-item">
-          <button class="vote-btn red" onclick="vote('${spot.id}', 'mittha')">মিথ্যা</button>
-          <span>${spot.mittha}</span>
-        </div>
-      </div>`;
+      popupContent += `
+        <div class="vote-box">
+          <div class="vote-item">
+            <button class="vote-btn green" onclick="vote('${spot.id}', 'sotto')">সত্য</button>
+            <span>${spot.sotto}</span>
+          </div>
+          <div class="vote-item">
+            <button class="vote-btn red" onclick="vote('${spot.id}', 'mittha')">মিথ্যা</button>
+            <span>${spot.mittha}</span>
+          </div>
+        </div>`;
     } else {
       popupContent += '<button onclick="addFoodToMosque(\'' + spot.id + '\',\'' + spot.name + '\',' + spot.lat + ',' + spot.lng + ')">খাবার যোগ করুন</button>';
     }
@@ -191,12 +185,13 @@ function renderSpots() {
 
   const list = document.getElementById('spots-list');
   list.innerHTML = '';
-  spots.forEach(spot => {
+  const foodSpots = spots.filter(spot => spot.food && spot.food !== 'মসজিদ');
+  foodSpots.forEach(spot => {
     const card = document.createElement('div');
-    card.className = 'spot-card animate-fade';
+    card.className = 'spot-card';
     card.innerHTML = `
       <h3>${spot.name}</h3>
-      <p>${foodIcons[spot.food] || '🕌'} ${spot.food || 'মসজিদ'}</p>
+      <p>${spot.food}</p>
       <p>সত্য: ${spot.sotto} • মিথ্যা: ${spot.mittha}</p>
     `;
     card.onclick = () => map.setView([spot.lat, spot.lng], 16);
@@ -226,7 +221,7 @@ function addFoodToMosque(id, name, lat, lng) {
   pendingLat = lat;
   pendingLng = lng;
   document.getElementById('name').value = name;
-  document.getElementById('name').disabled = true; // Name not editable
+  document.getElementById('name').disabled = true;
   document.getElementById('add-modal').style.display = 'flex';
   document.querySelector('.modal-content h2').textContent = 'মসজিদে খাবার যোগ করুন';
 }
