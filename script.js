@@ -1,6 +1,5 @@
-// script.js - Updated with vote limit, animations, music pause, mosque icon
 
-const API_URL = "https://script.google.com/macros/s/AKfycbwNQtj1E56nCzkphsHP7VLiUvLyTej376BujqVKLzCJpIeBu9glDsfIuCM01KXVTXrz/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxtwUhYG0rg4DsotZQijbSXvcY1D608zYWMhpMp5zGkHtZpXMri62xvr7yyCE5GRBPJ/exec";
 
 let map;
 let spots = [];
