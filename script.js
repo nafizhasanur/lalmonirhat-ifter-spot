@@ -16,6 +16,34 @@ const foodIcons = {
   'মসজিদ': '🕌'
 };
 
+// Global functions for popup onclick
+window.vote = async function(id, type) {
+  if (localStorage.getItem('voted_' + id)) return alert('আপনি ইতিমধ্যে ভোট দিয়েছেন!');
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: "vote", id, type })
+    });
+    if (!res.ok) throw new Error('Vote failed');
+    localStorage.setItem('voted_' + id, 'true');
+    alert('ভোট দেওয়া হয়েছে!');
+    loadSpots();
+  } catch (err) {
+    alert('ভোট দেওয়া যায়নি: ' + err.message);
+  }
+};
+
+window.addFoodToMosque = function(id, name, lat, lng) {
+  currentEditId = id;
+  pendingLat = lat;
+  pendingLng = lng;
+  document.getElementById('name').value = name;
+  document.getElementById('name').disabled = true;
+  document.getElementById('add-modal').style.display = 'flex';
+  document.querySelector('.modal-content h2').textContent = 'মসজিদে খাবার যোগ করুন';
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
   map = L.map('map').setView([25.9167, 89.4500], 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -170,15 +198,9 @@ function renderSpots() {
       return;
     }
 
-    const icon = L.divIcon({
-      html: `<span style="font-size: 36px; display: block; text-align: center; line-height: 1;">${emoji}</span>`,
-      className: 'custom-icon',
-      iconSize: [50, 50],
-      iconAnchor: [25, 50],
-      popupAnchor: [0, -50]
-    });
-
-    const marker = L.marker([lat, lng], { icon }).addTo(map);
+    // Simple marker with emoji (fallback if divIcon fail)
+    const marker = L.marker([lat, lng]).addTo(map);
+    marker.bindTooltip(emoji, { permanent: true, direction: 'center', className: 'emoji-tooltip' });
 
     let popupContent = `<b>${spot.name}</b><br>খাবার: ${spot.food || 'মসজিদ'}<br><br>`;
 
